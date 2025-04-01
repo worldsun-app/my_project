@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block title %}文件下載 - 金融資訊網{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- 側邊欄 -->
+    <div class="col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">文件類別</h5>
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="{% url 'documents:list' %}" 
+                   class="list-group-item list-group-item-action {% if not current_category %}active{% endif %}">
+                    <i class="fas fa-folder me-2"></i>全部文件
+                </a>
+                {% for key, value in categories.items %}
+                <a href="{% url 'documents:list' %}?category={{ key }}" 
+                   class="list-group-item list-group-item-action {% if current_category == key %}active{% endif %}">
+                    <i class="fas fa-folder me-2"></i>{{ value }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- 文件列表 -->
+    <div class="col-md-9">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    {% if current_category %}
+                        {{ categories|get_item:current_category }}
+                    {% else %}
+                        全部文件
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if documents %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>標題</th>
+                                <th>上傳時間</th>
+                                <th>下載次數</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for document in documents %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'documents:detail' document.pk %}" class="text-decoration-none">
+                                        {{ document.title }}
+                                    </a>
+                                </td>
+                                <td>{{ document.upload_time|date:"Y/m/d H:i" }}</td>
+                                <td>{{ document.download_count }}</td>
+                                <td>
+                                    <a href="{% url 'documents:download' document.pk %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-download me-1"></i>下載
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">目前沒有文件</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

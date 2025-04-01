@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ document.title }} - 金融資訊網{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">{{ document.title }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <h6 class="text-muted">文件資訊</h6>
+                    <table class="table">
+                        <tr>
+                            <th style="width: 150px;">類別</th>
+                            <td>{{ category_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>上傳時間</th>
+                            <td>{{ document.upload_time|date:"Y/m/d H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <th>最後修改</th>
+                            <td>{{ document.last_modified|date:"Y/m/d H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <th>下載次數</th>
+                            <td>{{ document.download_count }}</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                {% if document.description %}
+                <div class="mb-4">
+                    <h6 class="text-muted">描述</h6>
+                    <p class="mb-0">{{ document.description|linebreaks }}</p>
+                </div>
+                {% endif %}
+                
+                <div class="d-grid gap-2">
+                    <a href="{% url 'documents:download' document.pk %}" class="btn btn-primary">
+                        <i class="fas fa-download me-2"></i>下載文件
+                    </a>
+                    <a href="{% url 'documents:list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>返回列表
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

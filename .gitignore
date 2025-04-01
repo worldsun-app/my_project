@@ -1,14 +1,54 @@
 # Python
 __pycache__/
 *.py[cod]
-*.sqlite3
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# Virtual environment
-venv/
-
-# Django logs
+# Django
 *.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+static/
 
-# VSCode / Cursor config
-.vscode/
+# 環境變數
+.env
+.venv
+env/
+venv/
+ENV/
+
+# IDE
 .idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# 專案特定
+uploads/
+*.bak
+*.tmp
+
+# OS
+Thumbs.db
+
+# Environment variables
+.env 
