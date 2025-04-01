@@ -28,11 +28,9 @@ db.sqlite3-journal
 media/
 static/
 
-# 環境變數
-.env
-.venv
-env/
+# Virtual Environment
 venv/
+env/
 ENV/
 
 # IDE
@@ -40,15 +38,11 @@ ENV/
 .vscode/
 *.swp
 *.swo
-.DS_Store
-
-# 專案特定
-uploads/
-*.bak
-*.tmp
-
-# OS
-Thumbs.db
 
 # Environment variables
-.env 
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db 

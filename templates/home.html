@@ -1,0 +1,290 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}首頁 - 金融資訊網{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8 mx-auto text-center">
+                <h1 class="display-4 fw-bold mb-4 fade-in">專業金融資訊，掌握市場脈動</h1>
+                <p class="lead mb-4 fade-in">提供即時市場分析、研究報告與重要公告，為您的投資決策提供最可靠的參考依據</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="{% url 'documents:list' %}" class="btn btn-light btn-lg">
+                        <i class="fas fa-file-alt me-2"></i>瀏覽文件
+                    </a>
+                    <a href="{% url 'announcements:list' %}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-bullhorn me-2"></i>查看公告
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 最新公告區塊 -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2 class="text-center mb-4">
+                    <i class="fas fa-bullhorn text-primary me-2"></i>最新公告
+                </h2>
+            </div>
+        </div>
+        <div class="row g-4">
+            {% for announcement in latest_announcements %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 fade-in">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ announcement.title }}</h5>
+                        <p class="card-text text-muted">
+                            <small>
+                                <i class="far fa-calendar-alt me-1"></i>
+                                {{ announcement.created_at|date:"Y/m/d" }}
+                            </small>
+                        </p>
+                        <p class="card-text">{{ announcement.content|truncatewords:30 }}</p>
+                        <a href="{% url 'announcements:detail' announcement.pk %}" class="btn btn-outline-primary">
+                            閱讀更多
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center">
+                <p class="text-muted">暫無公告</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- 最新文件區塊 -->
+<section class="py-5">
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2 class="text-center mb-4">
+                    <i class="fas fa-file-alt text-primary me-2"></i>最新文件
+                </h2>
+            </div>
+        </div>
+        <div class="row g-4">
+            {% for document in latest_documents %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 fade-in">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="card-title mb-0">{{ document.title }}</h5>
+                            <span class="badge bg-primary">{{ document.get_source_display }}</span>
+                        </div>
+                        <p class="card-text text-muted">
+                            <small>
+                                <i class="far fa-calendar-alt me-1"></i>
+                                {{ document.upload_time|date:"Y/m/d" }}
+                            </small>
+                        </p>
+                        <p class="card-text">{{ document.description|truncatewords:30 }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-secondary">
+                                <i class="fas fa-download me-1"></i>{{ document.download_count }}
+                            </span>
+                            <a href="{% url 'documents:detail' document.pk %}" class="btn btn-primary">
+                                下載
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center">
+                <p class="text-muted">暫無文件</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- 文件分類區塊 -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <!-- 區塊標題 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2 class="text-center mb-4">
+                    <i class="fas fa-folder text-primary me-2"></i>文件分類
+                </h2>
+            </div>
+        </div>
+
+        <!-- 分類按鈕區 -->
+        <div class="row justify-content-center">
+            <div class="col-12">
+                <div class="d-flex flex-wrap justify-content-center gap-4">
+                    <div class="d-flex flex-wrap justify-content-center gap-4" style="max-width: 800px;">
+                        <!-- 保險計算器 -->
+                        <a href="{% url 'documents:list' %}?category=insurance_calculator" 
+                           class="btn btn-outline-primary d-flex flex-column align-items-center">
+                            <i class="fas fa-calculator mb-2"></i>
+                            <span>保險計算器</span>
+                        </a>
+                        <!-- 保險優惠 -->
+                        <a href="{% url 'documents:list' %}?category=insurance_discount" 
+                           class="btn btn-outline-primary d-flex flex-column align-items-center">
+                            <i class="fas fa-percent mb-2"></i>
+                            <span>保險優惠</span>
+                        </a>
+                        <!-- 保險公司介紹 -->
+                        <a href="{% url 'documents:list' %}?category=insurance_company" 
+                           class="btn btn-outline-primary d-flex flex-column align-items-center">
+                            <i class="fas fa-building mb-2"></i>
+                            <span>保險公司介紹</span>
+                        </a>
+                        <!-- 美股報告 -->
+                        <a href="{% url 'documents:list' %}?category=us_stock_report" 
+                           class="btn btn-outline-primary d-flex flex-column align-items-center">
+                            <i class="fas fa-newspaper mb-2"></i>
+                            <span>美股報告</span>
+                        </a>
+                        <!-- 投資月報 -->
+                        <a href="{% url 'documents:list' %}?category=investment_monthly" 
+                           class="btn btn-outline-primary d-flex flex-column align-items-center">
+                            <i class="fas fa-calendar mb-2"></i>
+                            <span>投資月報</span>
+                        </a>
+                        <!-- 投資策略 -->
+                        <a href="{% url 'documents:list' %}?category=investment_strategy" 
+                           class="btn btn-outline-primary d-flex flex-column align-items-center">
+                            <i class="fas fa-chess-king mb-2"></i>
+                            <span>投資策略</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 關於我們區塊 -->
+<section class="py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-4 mb-lg-0">
+                <h2 class="mb-4">
+                    <i class="fas fa-info-circle text-primary me-2"></i>關於我們
+                </h2>
+                <p class="lead mb-4">金融資訊網致力於提供專業、即時、準確的金融市場資訊，為您的投資決策提供最可靠的參考依據。</p>
+                <div class="row g-4">
+                    <div class="col-6">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>專業分析團隊</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>即時市場資訊</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>完整研究報告</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>安全可靠平台</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card fade-in">
+                    <div class="card-body p-4">
+                        <h5 class="card-title mb-4">聯絡我們</h5>
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="fas fa-envelope text-primary me-3"></i>
+                            <a href="mailto:contact@example.com" class="text-decoration-none">contact@example.com</a>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="fas fa-phone text-primary me-3"></i>
+                            <a href="tel:0212345678" class="text-decoration-none">(02) 1234-5678</a>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-clock text-primary me-3"></i>
+                            <span>週一至週五 9:00-18:00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 自定義樣式 -->
+<style>
+    /* 卡片樣式優化 */
+    .card {
+        border: none;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0,0,0,0.1) !important;
+    }
+
+    /* 卡片標題列樣式 */
+    .card-header {
+        border-radius: 10px 10px 0 0 !important;
+        padding: 1rem;
+    }
+
+    /* 按鈕樣式優化 */
+    .btn-outline-primary {
+        border-radius: 12px;
+        padding: 1.5rem 1rem;
+        transition: all 0.3s ease;
+        border-width: 2px;
+        width: 200px;
+        height: 120px;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+
+    .btn-outline-primary:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    /* 圖標樣式 */
+    .fas {
+        font-size: 2em;
+        color: var(--primary-color);
+    }
+
+    /* 文字樣式 */
+    .btn-outline-primary span {
+        font-size: 0.9em;
+        text-align: center;
+    }
+
+    /* 響應式調整 */
+    @media (max-width: 768px) {
+        .card-body {
+            padding: 1rem;
+        }
+        .btn-outline-primary {
+            width: 100%;
+            height: 100px;
+            margin-bottom: 0.5rem;
+        }
+        .fas {
+            font-size: 1.8em;
+        }
+    }
+</style>
+{% endblock %} 

@@ -1,0 +1,13 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls %}
+
+{% block object-tools-items %}
+    {% if show_api_doc %}
+    <li>
+        <a href="{% url 'admin:api-documentation' %}" class="viewlink">
+            API 使用說明
+        </a>
+    </li>
+    {% endif %}
+    {{ block.super }}
+{% endblock %} 

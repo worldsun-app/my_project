@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}公告列表 - 金融資訊網{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">公告列表</h1>
+    
+    {% if announcements %}
+        <div class="row">
+            {% for announcement in announcements %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                {% if announcement.is_important %}
+                                    <span class="badge bg-danger me-2">重要</span>
+                                {% endif %}
+                                {{ announcement.title }}
+                            </h5>
+                            <p class="card-text text-muted">
+                                <small>
+                                    發布時間：{{ announcement.created_at|date:"Y/m/d H:i" }}
+                                </small>
+                            </p>
+                            <p class="card-text">{{ announcement.content|truncatewords:30 }}</p>
+                            <a href="{% url 'announcements:detail' announcement.pk %}" class="btn btn-primary">閱讀更多</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        {% if is_paginated %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">上一頁</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        </li>
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">下一頁</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info">
+            目前沒有公告。
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

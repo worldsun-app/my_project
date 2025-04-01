@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}上傳文件 - 金融資訊網{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h1 class="card-title mb-4">上傳文件</h1>
+                    
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">標題</label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.title.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">描述</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.description.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.source.id_for_label }}" class="form-label">來源</label>
+                            {{ form.source }}
+                            {% if form.source.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.source.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3" id="file-field">
+                            <label for="{{ form.file.id_for_label }}" class="form-label">檔案</label>
+                            {{ form.file }}
+                            {% if form.file.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.file.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3" id="url-field" style="display: none;">
+                            <label for="{{ form.external_url.id_for_label }}" class="form-label">外部連結</label>
+                            {{ form.external_url }}
+                            {% if form.external_url.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.external_url.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.category.id_for_label }}" class="form-label">分類</label>
+                            {{ form.category }}
+                            {% if form.category.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.category.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'documents:list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> 返回列表
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-upload"></i> 上傳
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sourceSelect = document.getElementById('{{ form.source.id_for_label }}');
+    const fileField = document.getElementById('file-field');
+    const urlField = document.getElementById('url-field');
+    
+    function toggleFields() {
+        if (sourceSelect.value === 'manual') {
+            fileField.style.display = 'block';
+            urlField.style.display = 'none';
+        } else {
+            fileField.style.display = 'none';
+            urlField.style.display = 'block';
+        }
+    }
+    
+    sourceSelect.addEventListener('change', toggleFields);
+    toggleFields(); // 初始化顯示
+});
+</script>
+{% endblock %}
+{% endblock %} 

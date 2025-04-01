@@ -1,32 +1,38 @@
+from django.shortcuts import render, redirect
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import TemplateView
-from django.utils import timezone
-from django.shortcuts import redirect
+from django.views.generic import TemplateView, CreateView
 from django.urls import reverse_lazy
+from documents.models import Document
+from django.contrib import messages
+from .forms import CustomUserCreationForm
+
+# Create your views here.
 
 class CustomLoginView(LoginView):
-    """自定義登入視圖"""
     template_name = 'accounts/login.html'
+    redirect_authenticated_user = True
     
+class CustomLogoutView(LogoutView):
+    next_page = reverse_lazy('accounts:login')
+    
+class RegisterView(CreateView):
+    form_class = CustomUserCreationForm
+    template_name = 'accounts/register.html'
+    success_url = reverse_lazy('accounts:dashboard')
+
     def form_valid(self, form):
-        """登入成功後更新最後登入資訊"""
         response = super().form_valid(form)
-        user = form.get_user()
-        user.last_login_ip = self.request.META.get('REMOTE_ADDR')
-        user.last_login_time = timezone.now()
-        user.save()
+        login(self.request, self.object)
+        messages.success(self.request, '註冊成功！')
         return response
 
-class CustomLogoutView(LogoutView):
-    """自定義登出視圖"""
-    next_page = reverse_lazy('accounts:login')
-
 class DashboardView(LoginRequiredMixin, TemplateView):
-    """儀表板視圖"""
     template_name = 'accounts/dashboard.html'
+    login_url = reverse_lazy('accounts:login')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['recent_documents'] = Document.objects.filter(uploaded_by=self.request.user).order_by('-upload_time')[:5]
         context['user'] = self.request.user
-        return context 
+        return context

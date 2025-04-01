@@ -5,8 +5,9 @@ from . import views
 app_name = 'accounts'
 
 urlpatterns = [
-    path('', RedirectView.as_view(url='login/', permanent=True)),  # 重定向根路徑到登入頁
+    path('', RedirectView.as_view(url='login/', permanent=False)),
     path('login/', views.CustomLoginView.as_view(), name='login'),
     path('logout/', views.CustomLogoutView.as_view(), name='logout'),
+    path('register/', views.RegisterView.as_view(), name='register'),
     path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
 ] 
