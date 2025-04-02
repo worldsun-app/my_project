@@ -97,7 +97,7 @@ DATABASES = {
         default='sqlite:///db.sqlite3',
         conn_max_age=600,
         conn_health_checks=True,
-        ssl_require=os.environ.get('DATABASE_SSL_REQUIRE', 'True') == 'True',
+        ssl_require=False,
         engine='django.db.backends.postgresql',
     )
 }
@@ -105,7 +105,7 @@ DATABASES = {
 # 數據庫連接池設置
 DATABASES['default']['CONN_MAX_AGE'] = 600  # 連接存活時間（秒）
 DATABASES['default']['OPTIONS'] = {
-    'sslmode': 'require' if os.environ.get('DATABASE_SSL_REQUIRE', 'True') == 'True' else 'prefer',
+    'sslmode': 'prefer',
 }
 
 
