@@ -94,7 +94,7 @@ WSGI_APPLICATION = 'my_project.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default='postgres://postgres:postgres@localhost:5432/postgres',
+        default=os.environ.get('DATABASE_URL', 'postgres://postgres:postgres@localhost:5432/postgres'),
         conn_max_age=600,
         conn_health_checks=True,
         ssl_require=False,
@@ -108,6 +108,10 @@ DATABASES['default']['OPTIONS'] = {
     'sslmode': 'prefer',
 }
 
+# 超級用戶設置
+DJANGO_SUPERUSER_USERNAME = os.environ.get('DJANGO_SUPERUSER_USERNAME', 'admin')
+DJANGO_SUPERUSER_EMAIL = os.environ.get('DJANGO_SUPERUSER_EMAIL', 'service@wsgfo.com')
+DJANGO_SUPERUSER_PASSWORD = os.environ.get('DJANGO_SUPERUSER_PASSWORD', 'wsfost1688')
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
