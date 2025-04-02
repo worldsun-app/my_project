@@ -94,7 +94,7 @@ WSGI_APPLICATION = 'my_project.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default='sqlite:///db.sqlite3',
+        default='postgres://postgres:postgres@localhost:5432/postgres',
         conn_max_age=600,
         conn_health_checks=True,
         ssl_require=False,
