@@ -198,26 +198,20 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'verbose',
         },
-        'file': {
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'debug.log'),
-            'formatter': 'verbose',
-            'mode': 'a',  # 追加模式
-        },
     },
     'root': {
-        'handlers': ['console'],  # 移除 file handler
+        'handlers': ['console'],
         'level': 'DEBUG',
         'propagate': True,
     },
     'loggers': {
         'django': {
-            'handlers': ['console'],  # 移除 file handler
+            'handlers': ['console'],
             'level': 'DEBUG',
             'propagate': True,
         },
         'accounts': {
-            'handlers': ['console'],  # 移除 file handler
+            'handlers': ['console'],
             'level': 'DEBUG',
             'propagate': True,
         },
