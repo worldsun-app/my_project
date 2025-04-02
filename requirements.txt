@@ -1,9 +1,10 @@
 asgiref==3.8.1
-Django==4.2.20
+Django>=4.2.0
 sqlparse==0.4.4
 typing_extensions==4.13.0
 tzdata==2025.2
-django-crispy-forms==2.1
-crispy-bootstrap5==2024.2
+django-crispy-forms>=2.0
+crispy-bootstrap5>=0.7
 python-dotenv==1.0.0
 django-cleanup==8.0.0
+django-dbbackup>=4.0.0

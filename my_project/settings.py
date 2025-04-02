@@ -157,5 +157,13 @@ LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
 
 # 數據庫備份設置
-DBBACKUP_STORAGE = os.getenv('DBBACKUP_STORAGE')
-DBBACKUP_STORAGE_OPTIONS = os.getenv('DBBACKUP_STORAGE_OPTIONS')
+DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
+DBBACKUP_STORAGE_OPTIONS = {'location': 'backup/'}
+DBBACKUP_CLEANUP_KEEP = 7  # 保留最近7天的備份
+DBBACKUP_CLEANUP_KEEP_MEDIA = 7  # 保留最近7天的媒體文件備份
+DBBACKUP_CONNECTORS = {
+    'default': {
+        'NAME': 'db.sqlite3',
+        'CONNECTOR': 'dbbackup.db.sqlite.SqliteConnector',
+    }
+}
