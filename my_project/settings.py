@@ -154,13 +154,13 @@ STATICFILES_DIRS = [
 ]
 
 # 使用 WhiteNoise 處理靜態文件
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # 確保在生產環境中正確處理靜態文件
 if not DEBUG:
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
     WHITENOISE_USE_FINDERS = True
-    WHITENOISE_MANIFEST_STRICT = True
+    WHITENOISE_MANIFEST_STRICT = False
     WHITENOISE_ALLOW_ALL_ORIGINS = True
 
 # Media files
@@ -259,22 +259,3 @@ EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-
-# 自動創建超級用戶
-def create_superuser():
-    from django.contrib.auth import get_user_model
-    User = get_user_model()
-    if not User.objects.filter(username=DJANGO_SUPERUSER_USERNAME).exists():
-        User.objects.create_superuser(
-            username=DJANGO_SUPERUSER_USERNAME,
-            email=DJANGO_SUPERUSER_EMAIL,
-            password=DJANGO_SUPERUSER_PASSWORD
-        )
-        print(f"超級用戶 {DJANGO_SUPERUSER_USERNAME} 已創建")
-    else:
-        print(f"超級用戶 {DJANGO_SUPERUSER_USERNAME} 已存在")
-
-# 在 Django 啟動時創建超級用戶
-import django
-django.setup()
-create_superuser()
