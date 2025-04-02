@@ -149,18 +149,7 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 
-# 確保目錄存在
-STATIC_DIR = os.path.join(BASE_DIR, 'static')
-if not os.path.exists(STATIC_DIR):
-    os.makedirs(STATIC_DIR)
-
-# 添加一個空的 CSS 文件以確保靜態目錄不為空
-CSS_FILE = os.path.join(STATIC_DIR, 'css', 'style.css')
-os.makedirs(os.path.dirname(CSS_FILE), exist_ok=True)
-if not os.path.exists(CSS_FILE):
-    with open(CSS_FILE, 'w') as f:
-        f.write('/* 基本樣式 */\n')
-
+# 移除構建階段的目錄創建代碼
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files
