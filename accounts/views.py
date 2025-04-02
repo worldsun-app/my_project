@@ -58,4 +58,4 @@ def logout_view(request):
     except Exception as e:
         logger.error(f'Logout error: {str(e)}')
         logger.error(f'Traceback: {traceback.format_exc()}')
-    return redirect('accounts:login')
+    return redirect('login')

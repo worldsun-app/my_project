@@ -3,6 +3,13 @@
 # 確保腳本在錯誤時停止
 set -e
 
+# 等待數據庫就緒
+echo "Waiting for database to be ready..."
+while ! nc -z $DB_HOST $DB_PORT; do
+  sleep 0.1
+done
+echo "Database is ready!"
+
 # 收集靜態文件
 echo "Collecting static files..."
 python manage.py collectstatic --noinput
