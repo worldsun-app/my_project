@@ -29,7 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-omk-%y^_6fl4enw7fn$0^8reu#4h*qvw=jn-m81w)b3b&3c-(o')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,wsapp.zeabur.app').split(',')
 
@@ -166,4 +166,26 @@ DBBACKUP_CONNECTORS = {
         'NAME': 'db.sqlite3',
         'CONNECTOR': 'dbbackup.db.sqlite.SqliteConnector',
     }
+}
+
+# 添加日誌配置
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
 }
