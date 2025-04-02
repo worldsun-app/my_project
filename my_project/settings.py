@@ -27,12 +27,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-omk-%y^_6fl4enw7fn$0^8reu#4h*qvw=jn-m81w)b3b&3c-(o')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-omk-%y^_6fl4enw7fn$0^8reu#4h*qvw=jn-m81w)b3b&3c-(o')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,wsapp.zeabur.app').split(',')
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,wsapp.zeabur.app').split(',')
 
 
 # Application definition
@@ -97,7 +97,15 @@ DATABASES = {
         default='sqlite:///db.sqlite3',
         conn_max_age=600,
         conn_health_checks=True,
+        ssl_require=os.environ.get('DATABASE_SSL_REQUIRE', 'True') == 'True',
+        engine='django.db.backends.postgresql',
     )
+}
+
+# 數據庫連接池設置
+DATABASES['default']['CONN_MAX_AGE'] = 600  # 連接存活時間（秒）
+DATABASES['default']['OPTIONS'] = {
+    'sslmode': 'require' if os.environ.get('DATABASE_SSL_REQUIRE', 'True') == 'True' else 'prefer',
 }
 
 
@@ -157,7 +165,7 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 # Authentication
 AUTH_USER_MODEL = 'accounts.CustomUser'
-LOGIN_REDIRECT_URL = 'dashboard'
+LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'login'
 
 # 數據庫備份設置
@@ -223,11 +231,19 @@ LOGGING = {
 }
 
 # 安全設置
-SECURE_SSL_REDIRECT = False  # 暫時關閉 SSL 重定向
-SESSION_COOKIE_SECURE = False  # 暫時關閉安全 Cookie
-CSRF_COOKIE_SECURE = False  # 暫時關閉安全 Cookie
-CSRF_TRUSTED_ORIGINS = ['https://wsapp.zeabur.app', 'http://127.0.0.1:8000', 'http://localhost:8000']
-CSRF_COOKIE_DOMAIN = None
+SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'False') == 'True'
+SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'False') == 'True'
+CSRF_COOKIE_SECURE = os.environ.get('CSRF_COOKIE_SECURE', 'False') == 'True'
+CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', 'https://wsapp.zeabur.app,http://127.0.0.1:8000,http://localhost:8000').split(',')
+CSRF_COOKIE_DOMAIN = os.environ.get('CSRF_COOKIE_DOMAIN', None)
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
+
+# 郵件設置
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
