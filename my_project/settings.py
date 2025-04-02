@@ -171,13 +171,13 @@ LOGOUT_REDIRECT_URL = 'accounts:login'
 
 # 數據庫備份設置
 DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
-DBBACKUP_STORAGE_OPTIONS = {'location': 'backup/'}
+DBBACKUP_STORAGE_OPTIONS = {'location': os.path.join(BASE_DIR, 'backup')}
 DBBACKUP_CLEANUP_KEEP = 7  # 保留最近7天的備份
 DBBACKUP_CLEANUP_KEEP_MEDIA = 7  # 保留最近7天的媒體文件備份
 DBBACKUP_CONNECTORS = {
     'default': {
-        'NAME': 'db.sqlite3',
-        'CONNECTOR': 'dbbackup.db.sqlite.SqliteConnector',
+        'NAME': 'postgresql',
+        'CONNECTOR': 'dbbackup.db.postgresql.PgDumpConnector',
     }
 }
 
@@ -198,7 +198,7 @@ LOGGING = {
         },
         'file': {
             'class': 'logging.FileHandler',
-            'filename': 'debug.log',
+            'filename': os.path.join(BASE_DIR, 'logs', 'debug.log'),
             'formatter': 'verbose',
         },
     },
