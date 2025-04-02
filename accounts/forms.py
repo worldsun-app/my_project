@@ -6,24 +6,14 @@ import traceback
 
 logger = logging.getLogger(__name__)
 
-class LoginForm(AuthenticationForm):
+class LoginForm(forms.Form):
     username = forms.CharField(
         label='用戶名',
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': '請輸入用戶名',
-            'autocomplete': 'username',
-            'required': True
-        })
+        widget=forms.TextInput(attrs={'class': 'form-control'})
     )
     password = forms.CharField(
         label='密碼',
-        widget=forms.PasswordInput(attrs={
-            'class': 'form-control',
-            'placeholder': '請輸入密碼',
-            'autocomplete': 'current-password',
-            'required': True
-        })
+        widget=forms.PasswordInput(attrs={'class': 'form-control'})
     )
 
     def clean(self):

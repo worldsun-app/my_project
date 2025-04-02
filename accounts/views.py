@@ -21,23 +21,38 @@ def login_view(request):
         return redirect('home')
         
     if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        user = authenticate(request, username=username, password=password)
+        form = LoginForm(request.POST)
+        logger.debug('Processing login form submission')
         
-        if user is not None:
-            login(request, user)
-            logger.info(f'User {username} logged in successfully')
-            messages.success(request, '登入成功！')
-            return redirect('home')
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            logger.debug(f'Attempting to authenticate user: {username}')
+            
+            try:
+                user = authenticate(username=username, password=password)
+                if user is not None:
+                    login(request, user)
+                    logger.info(f'User {username} logged in successfully')
+                    messages.success(request, '登入成功！')
+                    return redirect('home')
+                else:
+                    logger.warning(f'Failed login attempt for user {username}')
+                    messages.error(request, '用戶名或密碼錯誤')
+            except Exception as e:
+                logger.error(f'Login error for user {username}: {str(e)}')
+                logger.error(f'Traceback: {traceback.format_exc()}')
+                messages.error(request, '登入時發生錯誤，請稍後再試')
         else:
-            logger.warning(f'Failed login attempt for user {username}')
-            messages.error(request, '用戶名或密碼錯誤，請重試。')
-            return render(request, 'accounts/login.html', {'username': username})
+            logger.warning(f'Invalid form submission: {form.errors}')
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
     else:
+        form = LoginForm()
         logger.debug('Rendering login form')
         
-    return render(request, 'accounts/login.html')
+    return render(request, 'accounts/login.html', {'form': form})
 
 def logout_view(request):
     try:
