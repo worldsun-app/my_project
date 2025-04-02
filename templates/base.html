@@ -188,22 +188,22 @@
                 </ul>
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'accounts:dashboard' %}">
-                                <i class="fas fa-user-circle me-1"></i>控制面板
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'accounts:logout' %}">
-                                <i class="fas fa-sign-out-alt me-1"></i>登出
-                            </a>
-                        </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'home' %}">
+                            <i class="fas fa-user-circle me-1"></i>{{ user.username }}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'accounts:logout' %}">
+                            <i class="fas fa-sign-out-alt me-1"></i>登出
+                        </a>
+                    </li>
                     {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'accounts:login' %}">
-                                <i class="fas fa-sign-in-alt me-1"></i>登入
-                            </a>
-                        </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'accounts:login' %}">
+                            <i class="fas fa-sign-in-alt me-1"></i>登入
+                        </a>
+                    </li>
                     {% endif %}
                 </ul>
             </div>
