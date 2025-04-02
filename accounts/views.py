@@ -3,6 +3,7 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.urls import reverse
+from django.views.decorators.debug import sensitive_post_parameters
 from .forms import LoginForm
 import logging
 import traceback
@@ -11,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 # Create your views here.
 
+@sensitive_post_parameters('password')
 def login_view(request):
     logger.debug(f'Login attempt from IP: {request.META.get("REMOTE_ADDR")}')
     
@@ -43,6 +45,9 @@ def login_view(request):
                 messages.error(request, '登入時發生錯誤，請稍後再試')
         else:
             logger.warning(f'Invalid form submission: {form.errors}')
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
     else:
         form = LoginForm()
         logger.debug('Rendering login form')

@@ -11,14 +11,18 @@ class LoginForm(AuthenticationForm):
         label='用戶名',
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': '請輸入用戶名'
+            'placeholder': '請輸入用戶名',
+            'autocomplete': 'username',
+            'required': True
         })
     )
     password = forms.CharField(
         label='密碼',
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
-            'placeholder': '請輸入密碼'
+            'placeholder': '請輸入密碼',
+            'autocomplete': 'current-password',
+            'required': True
         })
     )
 
@@ -35,4 +39,12 @@ class LoginForm(AuthenticationForm):
         except Exception as e:
             logger.error(f'Unexpected error in form: {str(e)}')
             logger.error(f'Traceback: {traceback.format_exc()}')
-            raise ValidationError('表單處理時發生錯誤，請稍後再試') 
+            raise ValidationError('表單處理時發生錯誤，請稍後再試')
+
+    def confirm_login_allowed(self, user):
+        if not user.is_active:
+            logger.warning(f'Login attempt for inactive user: {user.username}')
+            raise ValidationError(
+                '此帳號已被停用，請聯繫管理員。',
+                code='inactive',
+            ) 
