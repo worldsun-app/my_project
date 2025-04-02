@@ -271,7 +271,6 @@ def create_superuser():
             username=DJANGO_SUPERUSER_USERNAME,
             email=DJANGO_SUPERUSER_EMAIL,
             password=DJANGO_SUPERUSER_PASSWORD,
-            phone_number='',  # 添加空字符串作為默認值
             first_name='',    # 添加空字符串作為默認值
             last_name=''      # 添加空字符串作為默認值
         )
