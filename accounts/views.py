@@ -30,7 +30,7 @@ def login_view(request):
             logger.debug(f'Attempting to authenticate user: {username}')
             
             try:
-                user = authenticate(request, username=username, password=password)
+                user = authenticate(username=username, password=password)
                 if user is not None:
                     login(request, user)
                     logger.info(f'User {username} logged in successfully')
@@ -63,4 +63,8 @@ def logout_view(request):
     except Exception as e:
         logger.error(f'Logout error: {str(e)}')
         logger.error(f'Traceback: {traceback.format_exc()}')
-    return redirect('login')
+    return redirect('accounts:login')
+
+@login_required
+def dashboard(request):
+    return render(request, 'accounts/dashboard.html')
