@@ -213,21 +213,22 @@ LOGGING = {
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'logs', 'debug.log'),
             'formatter': 'verbose',
+            'mode': 'a',  # 追加模式
         },
     },
     'root': {
-        'handlers': ['console', 'file'],
+        'handlers': ['console'],  # 移除 file handler
         'level': 'DEBUG',
         'propagate': True,
     },
     'loggers': {
         'django': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],  # 移除 file handler
             'level': 'DEBUG',
             'propagate': True,
         },
         'accounts': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],  # 移除 file handler
             'level': 'DEBUG',
             'propagate': True,
         },
