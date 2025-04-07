@@ -265,7 +265,24 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 # 自動創建超級用戶
 def create_superuser():
     from django.contrib.auth import get_user_model
+    from django.db import connection
     User = get_user_model()
+    
+    # 检查数据库表结构
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'accounts_customuser' 
+            AND column_name = 'phone_number'
+        """)
+        if cursor.fetchone():
+            # 如果 phone_number 字段存在，将其设置为可空
+            cursor.execute("""
+                ALTER TABLE accounts_customuser 
+                ALTER COLUMN phone_number DROP NOT NULL
+            """)
+    
     if not User.objects.filter(username=DJANGO_SUPERUSER_USERNAME).exists():
         User.objects.create_superuser(
             username=DJANGO_SUPERUSER_USERNAME,
