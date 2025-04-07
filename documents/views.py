@@ -17,7 +17,7 @@ from .forms import InsuranceDocumentForm, InvestmentDocumentForm
 # 保險相關視圖
 class InsuranceDocumentListView(LoginRequiredMixin, ListView):
     model = InsuranceDocument
-    template_name = 'insurance/documents_list.html'
+    template_name = 'documents/insurancedocument_list.html'
     context_object_name = 'documents'
 
     def get_queryset(self):
@@ -57,7 +57,7 @@ def download_insurance_document(request, pk):
 # 投資相關視圖
 class InvestmentDocumentListView(LoginRequiredMixin, ListView):
     model = InvestmentDocument
-    template_name = 'investment/documents_list.html'
+    template_name = 'documents/investmentdocument_list.html'
     context_object_name = 'documents'
 
     def get_queryset(self):

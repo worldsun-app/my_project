@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}投資文件資料{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">投資文件資料</h2>
+    
+    <div class="card-list">
+        {% for document in documents %}
+        <div class="content-card">
+            <h3>{{ document.name }}</h3>
+            <p>{{ document.description }}</p>
+            <div class="meta">
+                <small>上傳時間：{{ document.upload_time|date:"Y-m-d" }}</small>
+            </div>
+            {% if document.file %}
+            <a href="{{ document.file.url }}" class="btn btn-primary" download>
+                <i class="fas fa-download me-2"></i>下載
+            </a>
+            {% elif document.external_url %}
+            <a href="{{ document.external_url }}" class="btn btn-primary" target="_blank">
+                <i class="fas fa-external-link-alt me-2"></i>查看
+            </a>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="alert alert-info">
+            目前沒有可用的投資文件資料。
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 
