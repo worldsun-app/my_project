@@ -94,18 +94,17 @@ WSGI_APPLICATION = 'my_project.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL', 'postgres://postgres:postgres@localhost:5432/postgres'),
+        default=os.environ.get('DATABASE_URL'),
         conn_max_age=600,
         conn_health_checks=True,
-        ssl_require=False,
-        engine='django.db.backends.postgresql',
     )
 }
 
-# 數據庫連接池設置
-DATABASES['default']['CONN_MAX_AGE'] = 600  # 連接存活時間（秒）
-DATABASES['default']['OPTIONS'] = {
-    'sslmode': 'prefer',
+# 数据库连接池配置
+DATABASE_POOL_ARGS = {
+    'max_overflow': 10,
+    'pool_size': 5,
+    'recycle': 300,
 }
 
 # 超級用戶設置
@@ -261,43 +260,3 @@ EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-
-# 自動創建超級用戶
-def create_superuser():
-    from django.contrib.auth import get_user_model
-    from django.db import connection
-    User = get_user_model()
-    
-    # 检查数据库表结构
-    with connection.cursor() as cursor:
-        # 获取所有非空字段
-        cursor.execute("""
-            SELECT column_name 
-            FROM information_schema.columns 
-            WHERE table_name = 'accounts_customuser' 
-            AND is_nullable = 'NO'
-            AND column_name NOT IN ('id', 'password', 'last_login', 'is_superuser', 'username', 'email', 'is_staff', 'is_active', 'date_joined')
-        """)
-        non_nullable_columns = [row[0] for row in cursor.fetchall()]
-        
-        # 将所有非空字段设置为可空
-        for column in non_nullable_columns:
-            cursor.execute(f"""
-                ALTER TABLE accounts_customuser 
-                ALTER COLUMN {column} DROP NOT NULL
-            """)
-    
-    if not User.objects.filter(username=DJANGO_SUPERUSER_USERNAME).exists():
-        User.objects.create_superuser(
-            username=DJANGO_SUPERUSER_USERNAME,
-            email=DJANGO_SUPERUSER_EMAIL,
-            password=DJANGO_SUPERUSER_PASSWORD
-        )
-        print(f"超級用戶 {DJANGO_SUPERUSER_USERNAME} 已創建")
-    else:
-        print(f"超級用戶 {DJANGO_SUPERUSER_USERNAME} 已存在")
-
-# 在 Django 啟動時創建超級用戶
-import django
-django.setup()
-create_superuser()

@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}市場行情 - WorldSun{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>市場行情</h2>
+        <a href="{% url 'documents:investment_document_create' category='market_quotes' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>新增行情
+        </a>
+    </div>
+    
+    <div class="table-container">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>行情標題</th>
+                        <th>概述</th>
+                        <th>上傳時間</th>
+                        <th>下載次數</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for document in documents %}
+                    <tr>
+                        <td>{{ document.title }}</td>
+                        <td>{{ document.description|truncatechars:100 }}</td>
+                        <td>{{ document.upload_time|date:"Y-m-d" }}</td>
+                        <td>{{ document.download_count }}</td>
+                        <td>
+                            <a href="{% url 'documents:investment_document_detail' pk=document.pk %}" class="btn btn-sm btn-outline-primary me-2">
+                                <i class="bi bi-eye"></i> 查看
+                            </a>
+                            <a href="{% url 'documents:investment_document_download' pk=document.pk %}" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-download"></i> 下載
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">暫無市場行情資訊</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %} 

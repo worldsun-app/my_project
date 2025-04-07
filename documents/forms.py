@@ -1,14 +1,7 @@
 from django import forms
-from .models import Document
+from .models import InsuranceDocument, InvestmentDocument
 
-class DocumentForm(forms.ModelForm):
-    class Meta:
-        model = Document
-        fields = ['title', 'description', 'file', 'external_url', 'source', 'category']
-        widgets = {
-            'description': forms.Textarea(attrs={'rows': 4}),
-        }
-
+class BaseDocumentForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         source = cleaned_data.get('source')
@@ -20,4 +13,24 @@ class DocumentForm(forms.ModelForm):
         elif source in ['google_drive', 'n8n'] and not external_url:
             raise forms.ValidationError('外部來源必須提供URL')
 
-        return cleaned_data 
+        return cleaned_data
+
+class InsuranceDocumentForm(BaseDocumentForm):
+    class Meta:
+        model = InsuranceDocument
+        fields = ['title', 'description', 'file', 'external_url', 'source', 'category']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 4}),
+            'category': forms.Select(attrs={'class': 'form-select'}),
+            'source': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+class InvestmentDocumentForm(BaseDocumentForm):
+    class Meta:
+        model = InvestmentDocument
+        fields = ['title', 'description', 'file', 'external_url', 'source', 'category']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 4}),
+            'category': forms.Select(attrs={'class': 'form-select'}),
+            'source': forms.Select(attrs={'class': 'form-select'}),
+        } 

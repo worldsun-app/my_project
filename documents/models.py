@@ -4,16 +4,12 @@ from django.utils import timezone
 from django.core.validators import FileExtensionValidator
 import os
 
-class Document(models.Model):
-    CATEGORY_CHOICES = [
-        ('calculator', '保險試算表'),
-        ('promotion', '保險優惠'),
-        ('company', '保司介紹'),
-        ('us_stock', '美股報告'),
-        ('monthly', '投資月報'),
-        ('strategy', '策略報告'),
-    ]
+def document_upload_path(instance, filename):
+    """生成文件上传路径"""
+    return f'documents/{instance.__class__.__name__.lower()}/{filename}'
 
+class BaseDocument(models.Model):
+    """基礎文件模型"""
     SOURCE_CHOICES = [
         ('manual', '手動上傳'),
         ('google_drive', 'Google Drive'),
@@ -24,29 +20,31 @@ class Document(models.Model):
     description = models.TextField('描述', blank=True)
     file = models.FileField(
         '文件',
-        upload_to='documents/%Y/%m/',
+        upload_to=document_upload_path,
         validators=[FileExtensionValidator(allowed_extensions=['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt'])],
         blank=True,
         null=True
     )
     external_url = models.URLField('外部連結', max_length=500, null=True, blank=True)
     source = models.CharField('來源', max_length=20, choices=SOURCE_CHOICES, default='manual')
-    category = models.CharField('類別', max_length=20, choices=CATEGORY_CHOICES, default='strategy')
     uploaded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
-        verbose_name='上傳者'
+        verbose_name='上傳者',
+        db_index=True
     )
-    upload_time = models.DateTimeField('上傳時間', auto_now_add=True)
+    upload_time = models.DateTimeField('上傳時間', auto_now_add=True, db_index=True)
     last_modified = models.DateTimeField('最後修改', auto_now=True)
     download_count = models.PositiveIntegerField('下載次數', default=0)
-    is_active = models.BooleanField('是否啟用', default=True)
+    is_active = models.BooleanField('是否啟用', default=True, db_index=True)
 
     class Meta:
-        verbose_name = '文件'
-        verbose_name_plural = '文件'
-        ordering = ['-upload_time']
+        abstract = True
+        indexes = [
+            models.Index(fields=['title']),
+            models.Index(fields=['source']),
+        ]
 
     def __str__(self):
         return self.title
@@ -70,4 +68,42 @@ class Document(models.Model):
     def increment_download_count(self):
         """增加下載次數"""
         self.download_count += 1
-        self.save()
+        self.save(update_fields=['download_count'])
+
+class InsuranceDocument(BaseDocument):
+    """保險文件模型"""
+    CATEGORY_CHOICES = [
+        ('products', '產品資料'),
+        ('proposals', '計畫書'),
+        ('promotions', '產品優惠'),
+        ('info', '保險資訊'),
+    ]
+
+    category = models.CharField('類別', max_length=20, choices=CATEGORY_CHOICES, db_index=True)
+
+    class Meta:
+        verbose_name = '保險文件'
+        verbose_name_plural = '保險文件'
+        ordering = ['-upload_time']
+        indexes = [
+            models.Index(fields=['category']),
+        ]
+
+class InvestmentDocument(BaseDocument):
+    """投資文件模型"""
+    CATEGORY_CHOICES = [
+        ('market_quotes', '市場行情'),
+        ('daily_reports', '每日報告'),
+        ('macro_reports', '宏觀報告'),
+        ('stock_reports', '股票報告'),
+    ]
+
+    category = models.CharField('類別', max_length=20, choices=CATEGORY_CHOICES, db_index=True)
+
+    class Meta:
+        verbose_name = '投資文件'
+        verbose_name_plural = '投資文件'
+        ordering = ['-upload_time']
+        indexes = [
+            models.Index(fields=['category']),
+        ]
