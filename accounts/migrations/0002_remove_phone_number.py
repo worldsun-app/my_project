@@ -9,6 +9,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RemoveField(
             model_name='customuser',
-            name='phone',
+            name='phone_number',
         ),
     ] 
