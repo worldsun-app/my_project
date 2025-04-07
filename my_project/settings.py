@@ -270,8 +270,7 @@ def create_superuser():
         User.objects.create_superuser(
             username=DJANGO_SUPERUSER_USERNAME,
             email=DJANGO_SUPERUSER_EMAIL,
-            password=DJANGO_SUPERUSER_PASSWORD,
-            phone_number=''  # 添加空字符串作为默认值
+            password=DJANGO_SUPERUSER_PASSWORD
         )
         print(f"超級用戶 {DJANGO_SUPERUSER_USERNAME} 已創建")
     else:
