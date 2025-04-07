@@ -36,8 +36,19 @@ ALLOWED_HOSTS = ['wsapp.zeabur.app', 'localhost', '127.0.0.1']
 CSRF_COOKIE_DOMAIN = '.zeabur.app'
 CSRF_COOKIE_SECURE = True
 CSRF_TRUSTED_ORIGINS = ['https://wsapp.zeabur.app']
-SECURE_SSL_REDIRECT = True
+
+# SSL settings
+SECURE_SSL_REDIRECT = False  # 修改這裡，因為 Zeabur 已經處理了 SSL
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = True
+
+# Additional security headers
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
 
 # Application definition
 INSTALLED_APPS = [
@@ -213,14 +224,6 @@ LOGGING = {
         },
     },
 }
-
-# 安全設置
-SECURE_BROWSER_XSS_FILTER = True
-SECURE_CONTENT_TYPE_NOSNIFF = True
-X_FRAME_OPTIONS = 'DENY'
-SECURE_HSTS_SECONDS = 31536000  # 1年
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
 
 # 郵件設置
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
