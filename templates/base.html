@@ -542,37 +542,28 @@
             function loadContent(category, subcategory) {
                 // 这里可以添加AJAX请求来加载对应内容
                 console.log(`Loading content for ${category} - ${subcategory}`);
-                // 示例：使用fetch API加载内容
-                fetch(`/api/content/${category}/${subcategory}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        // 更新内容区域
-                        updateContentArea(data);
+                // 使用fetch API加载内容
+                fetch(`/documents/${category}/${subcategory}/`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.text();
                     })
-                    .catch(error => console.error('Error:', error));
-            }
-
-            // 更新内容区域
-            function updateContentArea(data) {
-                const contentArea = document.querySelector('.main-content');
-                // 这里可以根据返回的数据更新内容区域
-                // 示例：使用模板字符串创建HTML
-                contentArea.innerHTML = `
-                    <div class="card-list">
-                        ${data.items.map(item => `
-                            <div class="content-card">
-                                <h3>${item.name}</h3>
-                                <p>${item.description}</p>
-                                <div class="meta">
-                                    <small>上傳時間：${item.upload_time}</small>
-                                </div>
-                                <button class="btn btn-primary">
-                                    <i class="fas fa-download me-2"></i>下載/查看
-                                </button>
+                    .then(html => {
+                        // 更新内容区域
+                        const contentArea = document.querySelector('.main-content');
+                        contentArea.innerHTML = html;
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        const contentArea = document.querySelector('.main-content');
+                        contentArea.innerHTML = `
+                            <div class="alert alert-danger">
+                                載入內容時發生錯誤，請稍後再試。
                             </div>
-                        `).join('')}
-                    </div>
-                `;
+                        `;
+                    });
             }
         });
     </script>

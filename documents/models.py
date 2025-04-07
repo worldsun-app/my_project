@@ -92,10 +92,10 @@ class InsuranceDocument(BaseDocument):
 class InvestmentDocument(BaseDocument):
     """投資文件模型"""
     CATEGORY_CHOICES = [
-        ('market_quotes', '市場行情'),
-        ('daily_reports', '每日報告'),
-        ('macro_reports', '宏觀報告'),
-        ('stock_reports', '股票報告'),
+        ('quotes', '行情報價'),
+        ('daily', '每日報告'),
+        ('macro', '總經報告'),
+        ('stocks', '個股報告'),
     ]
 
     category = models.CharField('類別', max_length=20, choices=CATEGORY_CHOICES, db_index=True)
