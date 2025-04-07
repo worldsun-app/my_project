@@ -13,7 +13,6 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
-from django.conf import settings
 import dj_database_url
 
 # Load environment variables
@@ -21,7 +20,6 @@ load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -32,11 +30,16 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-omk-%y^_6fl4enw7fn$0^
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,wsapp.zeabur.app').split(',')
+ALLOWED_HOSTS = ['wsapp.zeabur.app', 'localhost', '127.0.0.1']
 
+# Security settings
+CSRF_COOKIE_DOMAIN = '.zeabur.app'
+CSRF_COOKIE_SECURE = True
+CSRF_TRUSTED_ORIGINS = ['https://wsapp.zeabur.app']
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -55,6 +58,7 @@ INSTALLED_APPS = [
     'documents.apps.DocumentsConfig',
     'announcements',
     'dbbackup',
+    'home',
 ]
 
 MIDDLEWARE = [
@@ -88,7 +92,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'my_project.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
@@ -96,15 +99,8 @@ DATABASES = {
     'default': dj_database_url.config(
         default=os.environ.get('DATABASE_URL'),
         conn_max_age=600,
-        conn_health_checks=True,
+        ssl_require=os.environ.get('DATABASE_SSL_REQUIRE', 'False') == 'True'
     )
-}
-
-# 数据库连接池配置
-DATABASE_POOL_ARGS = {
-    'max_overflow': 10,
-    'pool_size': 5,
-    'recycle': 300,
 }
 
 # 超級用戶設置
@@ -113,8 +109,6 @@ DJANGO_SUPERUSER_EMAIL = os.environ.get('DJANGO_SUPERUSER_EMAIL', 'service@wsgfo
 DJANGO_SUPERUSER_PASSWORD = os.environ.get('DJANGO_SUPERUSER_PASSWORD', 'wsfost1688')
 
 # Password validation
-# https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -130,47 +124,27 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
-# https://docs.djangoproject.com/en/4.2/topics/i18n/
-
 LANGUAGE_CODE = 'zh-hant'
-
 TIME_ZONE = 'Asia/Taipei'
-
 USE_I18N = True
-
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.2/howto/static-files/
-
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = '/app/staticfiles'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 
-# 使用 WhiteNoise 處理靜態文件
-if not DEBUG:
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
-    WHITENOISE_USE_FINDERS = True
-    WHITENOISE_MANIFEST_STRICT = False
-    WHITENOISE_ALLOW_ALL_ORIGINS = True
-    WHITENOISE_INDEX_FILE = True
-    WHITENOISE_ROOT = STATIC_ROOT
-    WHITENOISE_AUTOREFRESH = True
-else:
-    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
-
 # Media files
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = '/app/media'
+
+# WhiteNoise configuration
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
-# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Crispy Forms
@@ -180,14 +154,14 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 # Authentication
 AUTH_USER_MODEL = 'accounts.CustomUser'
 LOGIN_URL = 'accounts:login'
-LOGIN_REDIRECT_URL = 'home'
+LOGIN_REDIRECT_URL = 'home:home'
 LOGOUT_REDIRECT_URL = 'accounts:login'
 
 # 數據庫備份設置
 DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
 DBBACKUP_STORAGE_OPTIONS = {'location': os.path.join(BASE_DIR, 'backup')}
-DBBACKUP_CLEANUP_KEEP = 7  # 保留最近7天的備份
-DBBACKUP_CLEANUP_KEEP_MEDIA = 7  # 保留最近7天的媒體文件備份
+DBBACKUP_CLEANUP_KEEP = 7
+DBBACKUP_CLEANUP_KEEP_MEDIA = 7
 DBBACKUP_CONNECTORS = {
     'default': {
         'NAME': 'postgresql',
@@ -241,11 +215,6 @@ LOGGING = {
 }
 
 # 安全設置
-SECURE_SSL_REDIRECT = False  # 在開發環境中設為 False
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
-CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', 'https://wsapp.zeabur.app,http://127.0.0.1:8000,http://localhost:8000').split(',')
-CSRF_COOKIE_DOMAIN = os.environ.get('CSRF_COOKIE_DOMAIN', None)
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
