@@ -18,7 +18,7 @@ def login_view(request):
     
     if request.user.is_authenticated:
         logger.info(f'User {request.user.username} is already authenticated, redirecting to home')
-        return redirect('home')
+        return redirect('home:home')
         
     if request.method == 'POST':
         form = LoginForm(request.POST)
@@ -35,7 +35,7 @@ def login_view(request):
                     login(request, user)
                     logger.info(f'User {username} logged in successfully')
                     messages.success(request, '登入成功！')
-                    return redirect('home')
+                    return redirect('home:home')
                 else:
                     logger.warning(f'Failed login attempt for user {username}')
                     messages.error(request, '用戶名或密碼錯誤')

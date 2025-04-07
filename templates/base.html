@@ -210,175 +210,86 @@
             margin-top: 20px;
         }
 
-        /* 浮动侧边栏样式 */
+        /* 左下角彈出欄樣式 */
         .floating-sidebar {
-            position: fixed;
-            left: -300px;
-            bottom: 0;
-            top: 76px;
-            width: 300px;
-            background-color: var(--white);
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-            z-index: 1000;
-            transition: left 0.3s ease;
-            overflow-y: auto;
-        }
-
-        .floating-sidebar.show {
-            left: 0;
-        }
-
-        .sidebar-toggle {
             position: fixed;
             left: 0;
             bottom: 20px;
-            z-index: 1001;
-            background-color: var(--primary-color);
-            color: var(--white);
+            z-index: 1000;
+            transform: translateX(-280px);
+            transition: transform 0.3s ease;
+            width: 280px;
+            background: white;
+            border-radius: 0 10px 10px 0;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .floating-sidebar.active {
+            transform: translateX(0);
+        }
+
+        .floating-sidebar-toggle {
+            position: absolute;
+            right: -40px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--primary-color);
+            color: white;
             border: none;
-            border-radius: 0 5px 5px 0;
             padding: 10px;
+            border-radius: 0 5px 5px 0;
             cursor: pointer;
-            transition: left 0.3s ease;
         }
 
-        .sidebar-toggle.show {
-            left: 300px;
+        .floating-sidebar-content {
+            padding: 20px;
+            max-height: 70vh;
+            overflow-y: auto;
         }
 
-        .category-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .category-item {
-            padding: 10px 15px;
-            border-bottom: 1px solid var(--light-bg);
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        .category-item:hover {
-            background-color: var(--light-bg);
-        }
-
-        .category-item.active {
-            background-color: var(--accent-color);
-            color: var(--white);
+        .category-header {
+            font-weight: 600;
+            color: var(--primary-color);
+            padding: 8px 15px;
+            background: var(--light-bg);
+            border-radius: 5px;
         }
 
         .subcategory-list {
-            list-style: none;
-            padding-left: 20px;
-            margin: 0;
-            display: none;
-        }
-
-        .subcategory-list.show {
-            display: block;
+            padding-left: 15px;
+            margin-top: 10px;
         }
 
         .subcategory-item {
-            padding: 8px 15px;
+            padding: 6px 12px;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            border-radius: 3px;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            transition: all 0.2s ease;
+            display: block;
+            color: var(--text-color);
+            text-decoration: none;
         }
 
         .subcategory-item:hover {
-            background-color: var(--light-bg);
+            background: var(--light-bg);
+            color: var(--primary-color);
+            transform: translateX(5px);
         }
 
         .subcategory-item.active {
-            background-color: var(--accent-color);
-            color: var(--white);
-        }
-
-        /* 内容区域样式 */
-        .main-content {
-            margin-left: 0;
-            padding: 20px;
-            transition: margin-left 0.3s ease;
-        }
-
-        .main-content.sidebar-open {
-            margin-left: 300px;
-        }
-
-        /* 卡片列表样式 */
-        .card-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            padding: 20px 0;
-        }
-
-        .content-card {
-            background: var(--white);
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 20px;
-            transition: transform 0.3s ease;
-        }
-
-        .content-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .content-card h3 {
-            color: var(--primary-color);
-            margin-bottom: 10px;
-        }
-
-        .content-card p {
-            color: var(--text-color);
-            margin-bottom: 15px;
-        }
-
-        .content-card .meta {
-            color: #666;
-            font-size: 0.9em;
-            margin-bottom: 15px;
-        }
-
-        .content-card .btn {
-            width: 100%;
+            background: var(--accent-color);
+            color: white;
         }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <!-- 浮动侧边栏 -->
-    <div class="floating-sidebar">
-        <ul class="category-list">
-            <li class="category-item" data-category="insurance">
-                <i class="fas fa-shield-alt me-2"></i>保險
-                <ul class="subcategory-list">
-                    <li class="subcategory-item" data-subcategory="products">產品資料</li>
-                    <li class="subcategory-item" data-subcategory="plans">計畫書</li>
-                    <li class="subcategory-item" data-subcategory="promotions">產品優惠</li>
-                    <li class="subcategory-item" data-subcategory="info">保險資訊</li>
-                </ul>
-            </li>
-            <li class="category-item" data-category="investment">
-                <i class="fas fa-chart-line me-2"></i>投資
-                <ul class="subcategory-list">
-                    <li class="subcategory-item" data-subcategory="quotes">行情報價</li>
-                    <li class="subcategory-item" data-subcategory="daily">每日報告</li>
-                    <li class="subcategory-item" data-subcategory="macro">總經報告</li>
-                    <li class="subcategory-item" data-subcategory="stocks">個股報告</li>
-                </ul>
-            </li>
-        </ul>
-    </div>
-    <button class="sidebar-toggle">
-        <i class="fas fa-bars"></i>
-    </button>
-
     <!-- 導航欄 -->
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'home' %}">
+            <a class="navbar-brand" href="{% url 'home:home' %}">
                 <i class="fas fa-chart-line me-2"></i>金融資訊網
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -387,7 +298,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'home' %}">
+                        <a class="nav-link" href="{% url 'home:home' %}">
                             <i class="fas fa-home me-1"></i>首頁
                         </a>
                     </li>
@@ -405,7 +316,7 @@
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'home' %}">
+                        <a class="nav-link" href="{% url 'home:home' %}">
                             <i class="fas fa-user-circle me-1"></i>{{ user.username }}
                         </a>
                     </li>
@@ -426,8 +337,66 @@
         </div>
     </nav>
 
-    <!-- 主要內容 -->
-    <main class="py-4">
+    <!-- 左下角彈出欄 -->
+    <div class="floating-sidebar">
+        <button class="floating-sidebar-toggle">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="floating-sidebar-content">
+            <h5 class="mb-3">文件分類</h5>
+            <!-- 保險分類 -->
+            <div class="category-group mb-4">
+                <div class="category-header mb-2">
+                    <i class="fas fa-shield-alt me-2"></i>保險
+                </div>
+                <div class="subcategory-list">
+                    <a href="{% url 'documents:insurance_documents_list' category='products' %}" 
+                       class="subcategory-item">
+                        <i class="fas fa-file-alt me-2"></i>產品資料
+                    </a>
+                    <a href="{% url 'documents:insurance_documents_list' category='plans' %}" 
+                       class="subcategory-item">
+                        <i class="fas fa-book me-2"></i>計畫書
+                    </a>
+                    <a href="{% url 'documents:insurance_documents_list' category='promotions' %}" 
+                       class="subcategory-item">
+                        <i class="fas fa-gift me-2"></i>產品優惠
+                    </a>
+                    <a href="{% url 'documents:insurance_documents_list' category='info' %}" 
+                       class="subcategory-item">
+                        <i class="fas fa-info-circle me-2"></i>保險資訊
+                    </a>
+                </div>
+            </div>
+            <!-- 投資分類 -->
+            <div class="category-group">
+                <div class="category-header mb-2">
+                    <i class="fas fa-chart-line me-2"></i>投資
+                </div>
+                <div class="subcategory-list">
+                    <a href="{% url 'documents:investment_documents_list' category='market_quotes' %}" 
+                       class="subcategory-item">
+                        <i class="fas fa-dollar-sign me-2"></i>行情報價
+                    </a>
+                    <a href="{% url 'documents:investment_documents_list' category='daily_reports' %}" 
+                       class="subcategory-item">
+                        <i class="fas fa-newspaper me-2"></i>每日報告
+                    </a>
+                    <a href="{% url 'documents:investment_documents_list' category='macro_reports' %}" 
+                       class="subcategory-item">
+                        <i class="fas fa-globe me-2"></i>總經報告
+                    </a>
+                    <a href="{% url 'documents:investment_documents_list' category='stock_reports' %}" 
+                       class="subcategory-item">
+                        <i class="fas fa-chart-bar me-2"></i>個股報告
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主要內容區 -->
+    <main>
         {% if messages %}
             <div class="container">
                 {% for message in messages %}
@@ -445,126 +414,54 @@
         </div>
     </main>
 
-    <!-- 頁尾 -->
-    <footer>
-        <div class="container">
-            <div class="row">
-                <div class="col-md-4 mb-4">
-                    <h5 class="footer-title">關於我們</h5>
-                    <p>金融資訊網提供最新的金融市場資訊、研究報告和重要公告，為您的投資決策提供專業的參考依據。</p>
-                </div>
-                <div class="col-md-4 mb-4">
-                    <h5 class="footer-title">快速連結</h5>
-                    <ul class="list-unstyled">
-                        <li class="mb-2">
-                            <a href="{% url 'home' %}" class="footer-link">
-                                <i class="fas fa-home me-2"></i>首頁
-                            </a>
-                        </li>
-                        <li class="mb-2">
-                            <a href="{% url 'documents:insurance_documents_list' category='products' %}" class="footer-link">
-                                <i class="fas fa-file-alt me-2"></i>文件下載
-                            </a>
-                        </li>
-                        <li class="mb-2">
-                            <a href="{% url 'announcements:list' %}" class="footer-link">
-                                <i class="fas fa-bullhorn me-2"></i>公告
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="col-md-4 mb-4">
-                    <h5 class="footer-title">聯絡資訊</h5>
-                    <ul class="list-unstyled">
-                        <li class="mb-2">
-                            <i class="fas fa-envelope me-2"></i>
-                            <a href="mailto:contact@example.com" class="footer-link">contact@example.com</a>
-                        </li>
-                        <li class="mb-2">
-                            <i class="fas fa-phone me-2"></i>
-                            <a href="tel:0212345678" class="footer-link">(02) 1234-5678</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-            <hr class="my-4" style="border-color: rgba(255,255,255,0.1);">
-            <div class="text-center">
-                <p class="mb-0">&copy; 2024 金融資訊網. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Bootstrap JS -->
+    <!-- JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const sidebar = document.querySelector('.floating-sidebar');
-            const toggleBtn = document.querySelector('.sidebar-toggle');
-            const mainContent = document.querySelector('.main-content');
-            const categoryItems = document.querySelectorAll('.category-item');
-            const subcategoryItems = document.querySelectorAll('.subcategory-item');
+            const toggle = document.querySelector('.floating-sidebar-toggle');
+            const sidebarContent = document.querySelector('.floating-sidebar-content');
 
-            // 切换侧边栏显示状态
-            toggleBtn.addEventListener('click', function() {
-                sidebar.classList.toggle('show');
-                toggleBtn.classList.toggle('show');
-                mainContent.classList.toggle('sidebar-open');
-            });
-
-            // 处理分类点击
-            categoryItems.forEach(item => {
-                item.addEventListener('click', function() {
-                    const subList = this.querySelector('.subcategory-list');
-                    if (subList) {
-                        subList.classList.toggle('show');
-                    }
-                });
-            });
-
-            // 处理子分类点击
-            subcategoryItems.forEach(item => {
-                item.addEventListener('click', function() {
-                    // 移除其他子分类的active类
-                    subcategoryItems.forEach(subItem => {
-                        subItem.classList.remove('active');
-                    });
-                    // 添加当前子分类的active类
-                    this.classList.add('active');
-                    
-                    // 这里可以添加加载对应内容的逻辑
-                    const category = this.closest('.category-item').dataset.category;
-                    const subcategory = this.dataset.subcategory;
-                    loadContent(category, subcategory);
-                });
-            });
-
-            // 加载内容函数
-            function loadContent(category, subcategory) {
-                // 这里可以添加AJAX请求来加载对应内容
-                console.log(`Loading content for ${category} - ${subcategory}`);
-                // 使用fetch API加载内容
-                fetch(`/documents/${category}/${subcategory}/`)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok');
-                        }
-                        return response.text();
-                    })
-                    .then(html => {
-                        // 更新内容区域
-                        const contentArea = document.querySelector('.main-content');
-                        contentArea.innerHTML = html;
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        const contentArea = document.querySelector('.main-content');
-                        contentArea.innerHTML = `
-                            <div class="alert alert-danger">
-                                載入內容時發生錯誤，請稍後再試。
-                            </div>
-                        `;
-                    });
+            // 檢查並恢復側邊欄狀態
+            if (localStorage.getItem('sidebarActive') === 'true') {
+                sidebar.classList.add('active');
             }
+
+            // 切換側邊欄
+            toggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                sidebar.classList.toggle('active');
+                // 保存狀態
+                localStorage.setItem('sidebarActive', sidebar.classList.contains('active'));
+            });
+
+            // 點擊側邊欄內容時阻止事件冒泡
+            sidebarContent.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+
+            // 點擊頁面其他區域時收起側邊欄
+            document.addEventListener('click', function(e) {
+                if (sidebar.classList.contains('active')) {
+                    sidebar.classList.remove('active');
+                    localStorage.setItem('sidebarActive', 'false');
+                }
+            });
+
+            // 設置子分類的樣式
+            document.querySelectorAll('.subcategory-item').forEach(item => {
+                item.style.display = 'block';
+                item.style.textDecoration = 'none';
+                item.style.color = 'inherit';
+            });
+
+            // 高亮當前選中的分類
+            const currentPath = window.location.pathname;
+            document.querySelectorAll('.subcategory-item').forEach(item => {
+                if (item.getAttribute('href') === currentPath) {
+                    item.classList.add('active');
+                }
+            });
         });
     </script>
     {% block extra_js %}{% endblock %}

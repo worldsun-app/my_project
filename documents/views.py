@@ -23,6 +23,18 @@ class InsuranceDocumentListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         category = self.kwargs.get('category')
         return InsuranceDocument.objects.filter(category=category, is_active=True)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        category = self.kwargs.get('category')
+        category_names = {
+            'products': '保險產品資料',
+            'plans': '保險計畫書',
+            'promotions': '保險產品優惠',
+            'info': '保險資訊'
+        }
+        context['category_display_name'] = category_names.get(category, '文件列表')
+        return context
 
 class InsuranceDocumentCreateView(LoginRequiredMixin, CreateView):
     model = InsuranceDocument
@@ -63,6 +75,18 @@ class InvestmentDocumentListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         category = self.kwargs.get('category')
         return InvestmentDocument.objects.filter(category=category, is_active=True)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        category = self.kwargs.get('category')
+        category_names = {
+            'market_quotes': '行情報價',
+            'daily_reports': '每日報告',
+            'macro_reports': '總經報告',
+            'stock_reports': '個股報告'
+        }
+        context['category_display_name'] = category_names.get(category, '文件列表')
+        return context
 
 class InvestmentDocumentCreateView(LoginRequiredMixin, CreateView):
     model = InvestmentDocument
@@ -135,6 +159,66 @@ def upload_document_api(request):
         return JsonResponse({
             'status': 'error',
             'message': '無效的JSON數據'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+@login_required
+def api_document_list(request, category):
+    """API接口用於獲取分類文件列表"""
+    try:
+        # 解析分類
+        doc_type, sub_category = category.split('-', 1)
+        
+        # 根據文件類型選擇模型和查詢條件
+        if doc_type == 'insurance':
+            model = InsuranceDocument
+            category_mapping = {
+                'products': 'products',
+                'plans': 'plans',
+                'promotions': 'promotions',
+                'info': 'info'
+            }
+        else:  # investment
+            model = InvestmentDocument
+            category_mapping = {
+                'quotes': 'market_quotes',
+                'daily': 'daily_reports',
+                'macro': 'macro_reports',
+                'stocks': 'stock_reports'
+            }
+        
+        # 獲取對應的數據庫分類
+        db_category = category_mapping.get(sub_category)
+        if not db_category:
+            return JsonResponse({
+                'status': 'error',
+                'message': '無效的分類'
+            }, status=400)
+        
+        # 查詢文件
+        documents = model.objects.filter(
+            category=db_category,
+            is_active=True
+        ).values('id', 'title', 'description', 'upload_time')
+        
+        # 格式化數據
+        document_list = list(documents)
+        for doc in document_list:
+            doc['upload_time'] = doc['upload_time'].isoformat()
+        
+        return JsonResponse({
+            'status': 'success',
+            'data': document_list
+        })
+        
+    except ValueError:
+        return JsonResponse({
+            'status': 'error',
+            'message': '無效的分類格式'
         }, status=400)
     except Exception as e:
         return JsonResponse({

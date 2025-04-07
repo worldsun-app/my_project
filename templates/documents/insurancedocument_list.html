@@ -1,34 +1,74 @@
 {% extends "base.html" %}
 
-{% block title %}保險產品資料{% endblock %}
+{% block title %}保險文件列表{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h2 class="mb-4">保險產品資料</h2>
-    
-    <div class="card-list">
-        {% for document in documents %}
-        <div class="content-card">
-            <h3>{{ document.name }}</h3>
-            <p>{{ document.description }}</p>
-            <div class="meta">
-                <small>上傳時間：{{ document.upload_time|date:"Y-m-d" }}</small>
+    <div class="card">
+        <div class="card-body">
+            <h2 class="card-title mb-4">
+                <i class="fas fa-shield-alt text-primary me-2"></i>{{ category_display_name }}
+            </h2>
+            
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>名稱</th>
+                            <th>概述</th>
+                            <th>上傳時間</th>
+                            <th>下載次數</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for document in documents %}
+                        <tr>
+                            <td>{{ document.title }}</td>
+                            <td>{{ document.description|truncatewords:30 }}</td>
+                            <td>{{ document.upload_time|date:"Y/m/d H:i" }}</td>
+                            <td>{{ document.download_count }}</td>
+                            <td>
+                                {% if document.file %}
+                                <a href="{% url 'documents:insurance_document_download' document.pk %}" 
+                                   class="btn btn-primary btn-sm">
+                                    <i class="fas fa-download me-1"></i>下載
+                                </a>
+                                {% elif document.external_url %}
+                                <a href="{% url 'documents:insurance_document_download' document.pk %}" 
+                                   class="btn btn-primary btn-sm">
+                                    <i class="fas fa-external-link-alt me-1"></i>查看
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4">
+                                <i class="fas fa-folder-open fa-2x mb-3 text-muted"></i>
+                                <p class="text-muted mb-0">暫無文件</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-            {% if document.file %}
-            <a href="{{ document.file.url }}" class="btn btn-primary" download>
-                <i class="fas fa-download me-2"></i>下載
-            </a>
-            {% elif document.external_url %}
-            <a href="{{ document.external_url }}" class="btn btn-primary" target="_blank">
-                <i class="fas fa-external-link-alt me-2"></i>查看
-            </a>
-            {% endif %}
         </div>
-        {% empty %}
-        <div class="alert alert-info">
-            目前沒有可用的保險產品資料。
-        </div>
-        {% endfor %}
     </div>
 </div>
+
+<style>
+    .table th {
+        background-color: #f8f9fa;
+    }
+    
+    .table td {
+        vertical-align: middle;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+</style>
 {% endblock %} 

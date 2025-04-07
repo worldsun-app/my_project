@@ -5,6 +5,7 @@ app_name = 'documents'
 
 urlpatterns = [
     path('api/upload/', views.upload_document_api, name='upload_api'),
+    path('api/documents/<str:category>/', views.api_document_list, name='api_document_list'),
     path('insurance/<str:category>/', views.InsuranceDocumentListView.as_view(), name='insurance_documents_list'),
     path('insurance/<str:category>/create/', views.InsuranceDocumentCreateView.as_view(), name='insurance_document_create'),
     path('insurance/<int:pk>/', views.InsuranceDocumentDetailView.as_view(), name='insurance_document_detail'),
