@@ -29,7 +29,7 @@ class Migration(migrations.Migration):
                 ('is_staff', models.BooleanField(default=False, help_text='Designates whether the user can log into this admin site.', verbose_name='staff status')),
                 ('is_active', models.BooleanField(default=True, help_text='Designates whether this user should be treated as active. Unselect this instead of deleting accounts.', verbose_name='active')),
                 ('date_joined', models.DateTimeField(default=django.utils.timezone.now, verbose_name='date joined')),
-                ('phone', models.CharField(blank=True, max_length=15, verbose_name='電話')),
+                ('phone', models.CharField(max_length=15, null=True, blank=True, verbose_name='電話')),
                 ('company', models.CharField(blank=True, max_length=100, verbose_name='公司')),
                 ('department', models.CharField(blank=True, max_length=100, verbose_name='部門')),
                 ('position', models.CharField(blank=True, max_length=100, verbose_name='職位')),
