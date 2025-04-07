@@ -32,6 +32,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
     path('documents/', include('documents.urls')),
+    path('announcements/', include('announcements.urls')),
     path('', RedirectView.as_view(url='/documents/insurance/products/'), name='home'),
     path('login/', login_view, name='login'),
     path('logout/', logout_view, name='logout'),
