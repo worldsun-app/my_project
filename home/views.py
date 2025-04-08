@@ -16,8 +16,8 @@ def home(request):
     
     context = {
         'announcements': latest_announcements,
-        'insurance_docs': latest_insurance_docs,
-        'investment_docs': latest_investment_docs,
+        'latest_insurance_documents': latest_insurance_docs,
+        'latest_investment_documents': latest_investment_docs,
     }
     
     return render(request, 'home.html', context) 
