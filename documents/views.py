@@ -74,7 +74,15 @@ class InvestmentDocumentListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         category = self.kwargs.get('category')
-        return InvestmentDocument.objects.filter(category=category, is_active=True)
+        # 將URL中的類別名稱映射到數據庫中的類別名稱
+        category_mapping = {
+            'market_quotes': 'quotes',
+            'daily_reports': 'daily',
+            'macro_reports': 'macro',
+            'stock_reports': 'stocks'
+        }
+        db_category = category_mapping.get(category, category)
+        return InvestmentDocument.objects.filter(category=db_category, is_active=True)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
