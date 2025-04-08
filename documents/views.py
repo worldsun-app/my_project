@@ -11,6 +11,7 @@ from django.http import JsonResponse
 import json
 from .models import InsuranceDocument, InvestmentDocument
 from .forms import InsuranceDocumentForm, InvestmentDocumentForm
+from django.conf import settings
 
 # Create your views here.
 
@@ -131,6 +132,14 @@ def download_investment_document(request, pk):
 def upload_document_api(request):
     """API接口用於n8n上傳文件"""
     try:
+        # 驗證API金鑰
+        api_key = request.headers.get('X-API-Key')
+        if not api_key or api_key != settings.API_KEY:
+            return JsonResponse({
+                'status': 'error',
+                'message': '無效的API金鑰'
+            }, status=401)
+
         # 解析請求數據
         data = json.loads(request.body)
         
@@ -143,6 +152,24 @@ def upload_document_api(request):
                     'message': f'缺少必要字段: {field}'
                 }, status=400)
         
+        # 驗證文件類型
+        if data['document_type'] not in ['insurance', 'investment']:
+            return JsonResponse({
+                'status': 'error',
+                'message': '無效的文件類型'
+            }, status=400)
+
+        # 驗證類別
+        valid_categories = {
+            'insurance': ['products', 'plans', 'promotions', 'info'],
+            'investment': ['quotes', 'daily', 'macro', 'stocks']
+        }
+        if data['category'] not in valid_categories[data['document_type']]:
+            return JsonResponse({
+                'status': 'error',
+                'message': '無效的文件類別'
+            }, status=400)
+        
         # 根據文件類型選擇模型
         model = InsuranceDocument if data['document_type'] == 'insurance' else InvestmentDocument
         
@@ -153,7 +180,7 @@ def upload_document_api(request):
             external_url=data['file_url'],
             source='n8n',
             category=data['category'],
-            uploaded_by=request.user if request.user.is_authenticated else None
+            is_active=True
         )
         
         return JsonResponse({
