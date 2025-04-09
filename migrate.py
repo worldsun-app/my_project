@@ -37,10 +37,11 @@ def main():
             cursor.execute("SELECT 1")
             logger.info("數據庫連接成功！")
         
-        # 運行遷移
+        # 運行 makemigrations
         logger.info("運行 makemigrations...")
         call_command('makemigrations', '--noinput')
         
+        # 運行遷移
         logger.info("運行 migrate...")
         call_command('migrate', '--noinput')
         
