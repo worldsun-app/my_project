@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
-from django.views.generic import ListView, DetailView, CreateView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib import messages
 from django.http import FileResponse, Http404
 from django.urls import reverse_lazy
@@ -262,3 +262,24 @@ def api_document_list(request, category):
             'status': 'error',
             'message': str(e)
         }, status=500)
+
+class InvestmentDocumentUpdateView(LoginRequiredMixin, UpdateView):
+    model = InvestmentDocument
+    form_class = InvestmentDocumentForm
+    template_name = 'investment/document_form.html'
+
+    def get_success_url(self):
+        return reverse_lazy('documents:investment_document_detail', kwargs={'pk': self.object.pk})
+
+    def form_valid(self, form):
+        messages.success(self.request, '文件更新成功！')
+        return super().form_valid(form)
+
+class InvestmentDocumentDeleteView(LoginRequiredMixin, DeleteView):
+    model = InvestmentDocument
+    template_name = 'investment/document_confirm_delete.html'
+    success_url = reverse_lazy('documents:investment_document_list')
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, '文件已刪除！')
+        return super().delete(request, *args, **kwargs)
