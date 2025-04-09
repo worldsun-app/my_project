@@ -72,3 +72,11 @@ def dashboard(request):
         'user': request.user,
     }
     return render(request, 'accounts/dashboard.html', context)
+
+@login_required
+def profile(request):
+    """用戶個人資料頁面"""
+    context = {
+        'user': request.user,
+    }
+    return render(request, 'accounts/profile.html', context)
