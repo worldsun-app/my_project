@@ -577,43 +577,66 @@
 </head>
 <body>
     <!-- 導航欄 -->
-    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'home:home' %}">
-                <i class="fas fa-chart-line me-2"></i>金融資訊網
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <i class="fas fa-file-alt me-2"></i>文檔管理系統
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="insuranceDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-shield-alt me-2"></i>保險文檔
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'documents:insurance_documents_list' 'products' %}">產品資料</a></li>
+                            <li><a class="dropdown-item" href="{% url 'documents:insurance_documents_list' 'proposals' %}">計畫書</a></li>
+                            <li><a class="dropdown-item" href="{% url 'documents:insurance_documents_list' 'promotions' %}">產品優惠</a></li>
+                            <li><a class="dropdown-item" href="{% url 'documents:insurance_documents_list' 'info' %}">保險資訊</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="investmentDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-chart-line me-2"></i>投資文檔
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'documents:investment_documents_list' 'market_quotes' %}">行情報價</a></li>
+                            <li><a class="dropdown-item" href="{% url 'documents:investment_documents_list' 'daily_reports' %}">每日報告</a></li>
+                            <li><a class="dropdown-item" href="{% url 'documents:investment_documents_list' 'macro_reports' %}">總經報告</a></li>
+                            <li><a class="dropdown-item" href="{% url 'documents:investment_documents_list' 'stock_reports' %}">個股報告</a></li>
+                        </ul>
+                    </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'home:home' %}">
-                            <i class="fas fa-home me-1"></i>首頁
+                        <a class="nav-link" href="{% url 'documents:search_documents' %}">
+                            <i class="fas fa-search me-2"></i>搜索
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="https://worldsun-family-office.ghost.io" target="_blank">
-                            <i class="fas fa-chart-bar me-1"></i>投資專欄
+                        <a class="nav-link" href="{% url 'documents:document_analytics' %}">
+                            <i class="fas fa-chart-bar me-2"></i>數據分析
                         </a>
                     </li>
                 </ul>
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'home:home' %}">
-                            <i class="fas fa-user-circle me-1"></i>{{ user.username }}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-2"></i>{{ user.username }}
                         </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'accounts:logout' %}">
-                            <i class="fas fa-sign-out-alt me-1"></i>登出
-                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{% url 'accounts:dashboard' %}">控制面板</a></li>
+                            <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">個人資料</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'accounts:logout' %}">登出</a></li>
+                        </ul>
                     </li>
                     {% else %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'accounts:login' %}">
-                            <i class="fas fa-sign-in-alt me-1"></i>登入
+                            <i class="fas fa-sign-in-alt me-2"></i>登入
                         </a>
                     </li>
                     {% endif %}
