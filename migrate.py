@@ -6,10 +6,7 @@ from django.core.management import call_command
 from django.db import connection
 
 # 配置日誌
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def delete_migrations():
