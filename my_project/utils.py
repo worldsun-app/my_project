@@ -2,18 +2,20 @@ from django.core.cache import cache
 from django.db.models import Q
 from functools import wraps
 import time
+from django.db import connection
 
 def cache_page(timeout):
+    """
+    頁面緩存裝飾器
+    """
     def decorator(view_func):
         @wraps(view_func)
         def _wrapped_view(request, *args, **kwargs):
-            cache_key = f"view_cache_{request.path}_{request.GET.urlencode()}"
+            cache_key = f'view_cache_{request.path}_{request.GET.urlencode()}'
             response = cache.get(cache_key)
-            
             if response is None:
                 response = view_func(request, *args, **kwargs)
                 cache.set(cache_key, response, timeout)
-            
             return response
         return _wrapped_view
     return decorator
@@ -61,4 +63,30 @@ class QueryTimer:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         elapsed_time = time.time() - self.start_time
-        print(f"{self.name} took {elapsed_time:.2f} seconds") 
+        print(f"{self.name} took {elapsed_time:.2f} seconds")
+
+def query_debugger(func):
+    """
+    數據庫查詢調試裝飾器
+    """
+    @wraps(func)
+    def inner_func(*args, **kwargs):
+        reset_queries()
+        start_queries = len(connection.queries)
+        start = time.perf_counter()
+        result = func(*args, **kwargs)
+        end = time.perf_counter()
+        end_queries = len(connection.queries)
+        
+        print(f"Function : {func.__name__}")
+        print(f"Number of Queries : {end_queries - start_queries}")
+        print(f"Finished in : {(end - start):.2f}s")
+        return result
+    return inner_func
+
+def reset_queries():
+    """
+    重置查詢計數器
+    """
+    from django.db import reset_queries
+    reset_queries() 

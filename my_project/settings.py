@@ -124,6 +124,13 @@ DATABASES = {
     }
 }
 
+# 數據庫連接池設置
+DATABASE_POOL_ARGS = {
+    'max_overflow': 10,
+    'pool_size': 5,
+    'recycle': 300,
+}
+
 # 超級用戶設置
 DJANGO_SUPERUSER_USERNAME = os.environ.get('DJANGO_SUPERUSER_USERNAME', 'admin')
 DJANGO_SUPERUSER_EMAIL = os.environ.get('DJANGO_SUPERUSER_EMAIL', 'service@wsgfo.com')
@@ -262,18 +269,23 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 # API設置
 API_KEY = os.environ.get('API_KEY', 'wsfost1688_api_key')  # 請在生產環境中更改此金鑰
 
-# 緩存配置
+# 查詢緩存設置
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'unique-snowflake',
+        'TIMEOUT': 300,  # 5分鐘
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000
+        }
     }
 }
 
-# 緩存設置
+# 緩存中間件設置
 CACHE_MIDDLEWARE_ALIAS = 'default'
-CACHE_MIDDLEWARE_SECONDS = 600
+CACHE_MIDDLEWARE_SECONDS = 300
 CACHE_MIDDLEWARE_KEY_PREFIX = ''
 
-# 性能優化設置
+# 會話設置
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 1209600  # 2週
