@@ -8,11 +8,12 @@ from django.urls import reverse_lazy
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
+from django.db.models import Q, Count
+from django.core.paginator import Paginator
 import json
-from .models import InsuranceDocument, InvestmentDocument
+from .models import InsuranceDocument, InvestmentDocument, Tag
 from .forms import InsuranceDocumentForm, InvestmentDocumentForm
 from django.conf import settings
-from django.db.models import Q
 from my_project.utils import cache_page, query_optimizer, activity_logger
 
 # Create your views here.
@@ -295,3 +296,98 @@ class InvestmentDocumentDeleteView(LoginRequiredMixin, DeleteView):
     def delete(self, request, *args, **kwargs):
         messages.success(request, '文件已刪除！')
         return super().delete(request, *args, **kwargs)
+
+# 搜索和過濾相關視圖
+@login_required
+@activity_logger
+def search_documents(request):
+    query = request.GET.get('q', '')
+    if query:
+        # 搜索保險文件
+        insurance_docs = InsuranceDocument.objects.filter(
+            Q(title__icontains=query) | 
+            Q(description__icontains=query) |
+            Q(content__icontains=query),
+            is_active=True
+        )
+        
+        # 搜索投資文件
+        investment_docs = InvestmentDocument.objects.filter(
+            Q(title__icontains=query) | 
+            Q(description__icontains=query) |
+            Q(content__icontains=query),
+            is_active=True
+        )
+        
+        context = {
+            'query': query,
+            'insurance_documents': insurance_docs,
+            'investment_documents': investment_docs,
+            'has_results': insurance_docs.exists() or investment_docs.exists()
+        }
+    else:
+        context = {
+            'query': '',
+            'insurance_documents': [],
+            'investment_documents': [],
+            'has_results': False
+        }
+    
+    return render(request, 'documents/search_results.html', context)
+
+@login_required
+def document_preview(request, pk):
+    """文檔預覽"""
+    # 嘗試獲取保險文檔
+    document = get_object_or_404(InsuranceDocument, pk=pk)
+    if not document:
+        # 如果找不到保險文檔，嘗試獲取投資文檔
+        document = get_object_or_404(InvestmentDocument, pk=pk)
+    
+    if not document.preview_url:
+        raise Http404('預覽不可用')
+    
+    return render(request, 'documents/preview.html', {
+        'document': document,
+        'preview_url': document.preview_url
+    })
+
+# 數據分析相關視圖
+@login_required
+def document_analytics(request):
+    """文檔分析"""
+    # 獲取下載統計
+    download_stats = {
+        'insurance': InsuranceDocument.objects.aggregate(
+            total=Count('id'),
+            downloads=Count('download_count')
+        ),
+        'investment': InvestmentDocument.objects.aggregate(
+            total=Count('id'),
+            downloads=Count('download_count')
+        )
+    }
+    
+    # 獲取分類統計
+    category_stats = {
+        'insurance': InsuranceDocument.objects.values('category').annotate(
+            count=Count('id'),
+            downloads=Count('download_count')
+        ),
+        'investment': InvestmentDocument.objects.values('category').annotate(
+            count=Count('id'),
+            downloads=Count('download_count')
+        )
+    }
+    
+    # 獲取標籤統計
+    tag_stats = Tag.objects.annotate(
+        doc_count=Count('basedocument'),
+        download_count=Count('basedocument__download_count')
+    ).order_by('-doc_count')[:10]
+    
+    return render(request, 'documents/analytics.html', {
+        'download_stats': download_stats,
+        'category_stats': category_stats,
+        'tag_stats': tag_stats
+    })
