@@ -31,11 +31,26 @@ def check_database():
     """檢查數據庫表結構"""
     try:
         with connection.cursor() as cursor:
-            # 檢查 documents_insurancedocument 表
+            # 檢查 documents_insurancedocument 表是否存在
+            cursor.execute("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'documents_insurancedocument'
+                )
+            """)
+            table_exists = cursor.fetchone()[0]
+            
+            if not table_exists:
+                logger.info("documents_insurancedocument 表不存在，將通過遷移創建")
+                return
+            
+            # 檢查 documents_insurancedocument 表的列
             cursor.execute("""
                 SELECT column_name 
                 FROM information_schema.columns 
-                WHERE table_name = 'documents_insurancedocument'
+                WHERE table_schema = 'public'
+                AND table_name = 'documents_insurancedocument'
             """)
             columns = [row[0] for row in cursor.fetchall()]
             logger.info(f"documents_insurancedocument 表的列: {columns}")
@@ -43,11 +58,15 @@ def check_database():
             # 如果缺少 auto_category 列，添加它
             if 'auto_category' not in columns:
                 logger.info("添加 auto_category 列...")
-                cursor.execute("""
-                    ALTER TABLE documents_insurancedocument 
-                    ADD COLUMN auto_category VARCHAR(50) DEFAULT ''
-                """)
-                logger.info("auto_category 列已添加")
+                try:
+                    cursor.execute("""
+                        ALTER TABLE documents_insurancedocument 
+                        ADD COLUMN auto_category VARCHAR(50) DEFAULT ''
+                    """)
+                    logger.info("auto_category 列已添加")
+                except Exception as e:
+                    logger.error(f"添加 auto_category 列時發生錯誤: {str(e)}")
+                    raise
                 
     except Exception as e:
         logger.error(f"檢查數據庫時發生錯誤: {str(e)}")
