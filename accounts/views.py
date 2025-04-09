@@ -67,4 +67,8 @@ def logout_view(request):
 
 @login_required
 def dashboard(request):
-    return render(request, 'accounts/dashboard.html')
+    """用戶控制面板"""
+    context = {
+        'user': request.user,
+    }
+    return render(request, 'accounts/dashboard.html', context)

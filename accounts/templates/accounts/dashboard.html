@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}控制面板{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">個人資料</h5>
+                    <p class="card-text">
+                        <strong>用戶名：</strong> {{ user.username }}<br>
+                        <strong>電子郵件：</strong> {{ user.email }}
+                    </p>
+                    <a href="{% url 'accounts:profile' %}" class="btn btn-primary">編輯個人資料</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">最近活動</h5>
+                    <div class="list-group">
+                        {% for activity in recent_activities %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ activity.title }}</h6>
+                                    <small class="text-muted">{{ activity.created_at|date:"Y-m-d H:i" }}</small>
+                                </div>
+                                <p class="mb-1">{{ activity.description }}</p>
+                            </div>
+                        {% empty %}
+                            <div class="list-group-item">
+                                <p class="mb-0 text-muted">暫無活動記錄</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
