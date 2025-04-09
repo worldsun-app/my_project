@@ -16,4 +16,7 @@ urlpatterns = [
     path('investment/create/', views.InvestmentDocumentCreateView.as_view(), name='investment_document_create'),
     path('investment/<int:pk>/update/', views.InvestmentDocumentUpdateView.as_view(), name='investment_document_update'),
     path('investment/<int:pk>/delete/', views.InvestmentDocumentDeleteView.as_view(), name='investment_document_delete'),
+    path('search/', views.search_documents, name='search_documents'),
+    path('preview/<int:pk>/', views.document_preview, name='document_preview'),
+    path('analytics/', views.document_analytics, name='document_analytics'),
 ] 
