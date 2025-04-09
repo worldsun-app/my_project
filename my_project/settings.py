@@ -269,7 +269,7 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 # API設置
 API_KEY = os.environ.get('API_KEY', 'wsfost1688_api_key')  # 請在生產環境中更改此金鑰
 
-# 查詢緩存設置
+# 緩存設置
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
