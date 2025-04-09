@@ -73,18 +73,28 @@ def download_insurance_document(request, pk):
 @login_required
 @cache_page(300)
 @activity_logger('view', 'investment')
-def investment_document_list(request):
+def investment_document_list(request, category):
     # 使用優化後的查詢
     documents = query_optimizer(
         InvestmentDocument.objects.filter(
-            Q(created_by=request.user) | Q(is_public=True)
+            Q(created_by=request.user) | Q(is_public=True),
+            category=category
         ).order_by('-created_at'),
         select_related=['created_by'],
         prefetch_related=['tags']
     )
     
+    # 獲取類別顯示名稱
+    category_names = {
+        'market_quotes': '行情報價',
+        'daily_reports': '每日報告',
+        'macro_reports': '總經報告',
+        'stock_reports': '個股報告'
+    }
+    
     return render(request, 'documents/investment_document_list.html', {
-        'documents': documents
+        'documents': documents,
+        'category_display_name': category_names.get(category, '文件列表')
     })
 
 @login_required
