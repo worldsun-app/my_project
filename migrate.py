@@ -4,6 +4,8 @@ import logging
 import shutil
 from django.core.management import call_command
 from django.db import connection
+from django.db.migrations.executor import MigrationExecutor
+from django.db import DEFAULT_DB_ALIAS
 
 # 配置日誌
 logging.basicConfig(level=logging.INFO)
@@ -25,6 +27,32 @@ def delete_migrations():
                         shutil.rmtree(file_path)
             logger.info(f"{app} 的遷移文件已清理")
 
+def check_database():
+    """檢查數據庫表結構"""
+    try:
+        with connection.cursor() as cursor:
+            # 檢查 documents_insurancedocument 表
+            cursor.execute("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'documents_insurancedocument'
+            """)
+            columns = [row[0] for row in cursor.fetchall()]
+            logger.info(f"documents_insurancedocument 表的列: {columns}")
+            
+            # 如果缺少 auto_category 列，添加它
+            if 'auto_category' not in columns:
+                logger.info("添加 auto_category 列...")
+                cursor.execute("""
+                    ALTER TABLE documents_insurancedocument 
+                    ADD COLUMN auto_category VARCHAR(50) DEFAULT ''
+                """)
+                logger.info("auto_category 列已添加")
+                
+    except Exception as e:
+        logger.error(f"檢查數據庫時發生錯誤: {str(e)}")
+        raise
+
 def main():
     logger.info("開始數據庫遷移...")
     
@@ -36,6 +64,9 @@ def main():
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1")
             logger.info("數據庫連接成功！")
+        
+        # 檢查數據庫表結構
+        check_database()
         
         # 運行 makemigrations
         logger.info("運行 makemigrations...")
