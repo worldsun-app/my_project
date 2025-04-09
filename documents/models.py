@@ -107,3 +107,40 @@ class InvestmentDocument(BaseDocument):
         indexes = [
             models.Index(fields=['category']),
         ]
+
+class UserActivityLog(models.Model):
+    """用戶行為日誌模型"""
+    ACTION_CHOICES = [
+        ('view', '查看'),
+        ('create', '創建'),
+        ('update', '更新'),
+        ('delete', '刪除'),
+        ('download', '下載'),
+        ('search', '搜索'),
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='用戶')
+    action = models.CharField('操作類型', max_length=20, choices=ACTION_CHOICES)
+    document_type = models.CharField('文件類型', max_length=20, choices=[
+        ('insurance', '保險文件'),
+        ('investment', '投資文件'),
+    ])
+    document_id = models.IntegerField('文件ID', null=True, blank=True)
+    document_title = models.CharField('文件標題', max_length=200, null=True, blank=True)
+    ip_address = models.GenericIPAddressField('IP地址', null=True, blank=True)
+    user_agent = models.TextField('用戶代理', null=True, blank=True)
+    created_at = models.DateTimeField('操作時間', auto_now_add=True)
+    details = models.JSONField('詳細信息', null=True, blank=True)
+
+    class Meta:
+        verbose_name = '用戶行為日誌'
+        verbose_name_plural = '用戶行為日誌'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'created_at']),
+            models.Index(fields=['action', 'created_at']),
+            models.Index(fields=['document_type', 'created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.get_action_display()} - {self.document_title or 'N/A'}"

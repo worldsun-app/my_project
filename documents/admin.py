@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import path
 from django.shortcuts import render
 from django.utils.html import format_html
-from .models import InsuranceDocument, InvestmentDocument
+from .models import InsuranceDocument, InvestmentDocument, UserActivityLog
 
 @admin.register(InsuranceDocument)
 class InsuranceDocumentAdmin(admin.ModelAdmin):
@@ -48,3 +48,18 @@ class InvestmentDocumentAdmin(admin.ModelAdmin):
         extra_context = extra_context or {}
         extra_context['show_api_doc'] = True
         return super().changelist_view(request, extra_context=extra_context)
+
+@admin.register(UserActivityLog)
+class UserActivityLogAdmin(admin.ModelAdmin):
+    list_display = ('user', 'action', 'document_type', 'document_title', 'created_at')
+    list_filter = ('action', 'document_type', 'created_at')
+    search_fields = ('user__username', 'document_title')
+    readonly_fields = ('user', 'action', 'document_type', 'document_id', 'document_title', 
+                      'ip_address', 'user_agent', 'created_at', 'details')
+    ordering = ('-created_at',)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

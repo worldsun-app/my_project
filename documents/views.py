@@ -13,7 +13,7 @@ from .models import InsuranceDocument, InvestmentDocument
 from .forms import InsuranceDocumentForm, InvestmentDocumentForm
 from django.conf import settings
 from django.db.models import Q
-from my_project.utils import cache_page, query_optimizer
+from my_project.utils import cache_page, query_optimizer, activity_logger
 
 # Create your views here.
 
@@ -71,7 +71,8 @@ def download_insurance_document(request, pk):
 
 # 投資相關視圖
 @login_required
-@cache_page(300)  # 緩存5分鐘
+@cache_page(300)
+@activity_logger('view', 'investment')
 def investment_document_list(request):
     # 使用優化後的查詢
     documents = query_optimizer(
@@ -87,6 +88,7 @@ def investment_document_list(request):
     })
 
 @login_required
+@activity_logger('view', 'investment')
 def investment_document_detail(request, pk):
     document = get_object_or_404(
         InvestmentDocument.objects.select_related('created_by').prefetch_related('tags'),
@@ -115,6 +117,7 @@ class InvestmentDocumentDetailView(LoginRequiredMixin, DetailView):
     context_object_name = 'document'
 
 @login_required
+@activity_logger('download', 'investment')
 def download_investment_document(request, pk):
     document = get_object_or_404(InvestmentDocument, pk=pk)
     document.increment_download_count()
