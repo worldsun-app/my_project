@@ -14,11 +14,8 @@ services:
         value: "False"
       - name: DATABASE_URL
         value: postgres://postgres:postgres@postgres:5432/postgres
-      - name: REDIS_URL
-        value: redis://redis:6379/1
     depends_on:
       - postgres
-      - redis
     command: python migrate.py && gunicorn my_project.wsgi:application --bind 0.0.0.0:8080
 
   - name: postgres
@@ -33,12 +30,5 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  - name: redis
-    image: redis:7
-    command: redis-server --requirepass zeabur
-    volumes:
-      - redis_data:/data
-
 volumes:
-  postgres_data:
-  redis_data: 
+  postgres_data: 
