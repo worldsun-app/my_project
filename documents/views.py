@@ -11,7 +11,7 @@ from django.http import JsonResponse
 from django.db.models import Q, Count
 from django.core.paginator import Paginator
 import json
-from .models import InsuranceDocument, InvestmentDocument, Tag
+from .models import InsuranceDocument, InvestmentDocument
 from .forms import InsuranceDocumentForm, InvestmentDocumentForm
 from django.conf import settings
 from my_project.utils import cache_page, query_optimizer, activity_logger
@@ -299,7 +299,7 @@ class InvestmentDocumentDeleteView(LoginRequiredMixin, DeleteView):
 
 # 搜索和過濾相關視圖
 @login_required
-@activity_logger
+@activity_logger('search', 'documents')
 def search_documents(request):
     query = request.GET.get('q', '')
     if query:
@@ -380,14 +380,7 @@ def document_analytics(request):
         )
     }
     
-    # 獲取標籤統計
-    tag_stats = Tag.objects.annotate(
-        doc_count=Count('basedocument'),
-        download_count=Count('basedocument__download_count')
-    ).order_by('-doc_count')[:10]
-    
     return render(request, 'documents/analytics.html', {
         'download_stats': download_stats,
-        'category_stats': category_stats,
-        'tag_stats': tag_stats
+        'category_stats': category_stats
     })
