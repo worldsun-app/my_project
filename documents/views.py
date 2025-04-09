@@ -12,6 +12,8 @@ import json
 from .models import InsuranceDocument, InvestmentDocument
 from .forms import InsuranceDocumentForm, InvestmentDocumentForm
 from django.conf import settings
+from django.db.models import Q
+from my_project.utils import cache_page, query_optimizer
 
 # Create your views here.
 
@@ -68,34 +70,31 @@ def download_insurance_document(request, pk):
         raise Http404('文件不存在')
 
 # 投資相關視圖
-class InvestmentDocumentListView(LoginRequiredMixin, ListView):
-    model = InvestmentDocument
-    template_name = 'documents/investmentdocument_list.html'
-    context_object_name = 'documents'
-
-    def get_queryset(self):
-        category = self.kwargs.get('category')
-        # 將URL中的類別名稱映射到數據庫中的類別名稱
-        category_mapping = {
-            'market_quotes': 'quotes',
-            'daily_reports': 'daily',
-            'macro_reports': 'macro',
-            'stock_reports': 'stocks'
-        }
-        db_category = category_mapping.get(category, category)
-        return InvestmentDocument.objects.filter(category=db_category, is_active=True)
+@login_required
+@cache_page(300)  # 緩存5分鐘
+def investment_document_list(request):
+    # 使用優化後的查詢
+    documents = query_optimizer(
+        InvestmentDocument.objects.filter(
+            Q(created_by=request.user) | Q(is_public=True)
+        ).order_by('-created_at'),
+        select_related=['created_by'],
+        prefetch_related=['tags']
+    )
     
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        category = self.kwargs.get('category')
-        category_names = {
-            'market_quotes': '行情報價',
-            'daily_reports': '每日報告',
-            'macro_reports': '總經報告',
-            'stock_reports': '個股報告'
-        }
-        context['category_display_name'] = category_names.get(category, '文件列表')
-        return context
+    return render(request, 'documents/investment_document_list.html', {
+        'documents': documents
+    })
+
+@login_required
+def investment_document_detail(request, pk):
+    document = get_object_or_404(
+        InvestmentDocument.objects.select_related('created_by').prefetch_related('tags'),
+        pk=pk
+    )
+    return render(request, 'documents/investment_document_detail.html', {
+        'document': document
+    })
 
 class InvestmentDocumentCreateView(LoginRequiredMixin, CreateView):
     model = InvestmentDocument

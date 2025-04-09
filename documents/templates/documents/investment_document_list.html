@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}投資文件列表{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>投資文件列表</h2>
+    
+    <div class="mb-3">
+        <a href="{% url 'documents:investment_document_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> 新增文件
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>標題</th>
+                    <th>類別</th>
+                    <th>創建者</th>
+                    <th>創建時間</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for document in documents %}
+                <tr>
+                    <td>{{ document.title }}</td>
+                    <td>{{ document.get_category_display }}</td>
+                    <td>{{ document.created_by.username }}</td>
+                    <td>{{ document.created_at|date:"Y-m-d H:i" }}</td>
+                    <td>
+                        <a href="{% url 'documents:investment_document_detail' document.pk %}" class="btn btn-sm btn-info">
+                            <i class="fas fa-eye"></i> 查看
+                        </a>
+                        {% if document.created_by == user %}
+                        <a href="{% url 'documents:investment_document_update' document.pk %}" class="btn btn-sm btn-warning">
+                            <i class="fas fa-edit"></i> 編輯
+                        </a>
+                        <a href="{% url 'documents:investment_document_delete' document.pk %}" class="btn btn-sm btn-danger">
+                            <i class="fas fa-trash"></i> 刪除
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center">暫無文件</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %} 
