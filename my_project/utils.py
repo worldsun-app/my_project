@@ -2,7 +2,34 @@ from django.core.cache import cache
 from django.db.models import Q
 from functools import wraps
 import time
-from django.db import connection
+from django.db import connection, reset_queries
+import logging
+
+logger = logging.getLogger(__name__)
+
+def activity_logger(action, category):
+    """
+    活動日誌裝飾器
+    :param action: 操作類型（如：view, download, upload等）
+    :param category: 文檔類別（如：insurance, investment等）
+    """
+    def decorator(view_func):
+        @wraps(view_func)
+        def _wrapped_view(request, *args, **kwargs):
+            # 執行原始視圖函數
+            response = view_func(request, *args, **kwargs)
+            
+            # 記錄活動日誌
+            logger.info(
+                f"User: {request.user.username}, "
+                f"Action: {action}, "
+                f"Category: {category}, "
+                f"Path: {request.path}"
+            )
+            
+            return response
+        return _wrapped_view
+    return decorator
 
 def cache_page(timeout):
     """

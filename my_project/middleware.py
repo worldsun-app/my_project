@@ -1,5 +1,5 @@
 import time
-from django.db import connection
+from django.db import connection, reset_queries
 from django.conf import settings
 import logging
 
