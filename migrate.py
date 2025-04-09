@@ -6,7 +6,10 @@ from django.core.management import call_command
 from django.db import connection
 
 # 配置日誌
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
 def delete_migrations():
@@ -26,9 +29,9 @@ def delete_migrations():
             logger.info(f"{app} 的遷移文件已清理")
 
 def main():
+    logger.info("開始數據庫遷移...")
+    
     try:
-        logger.info("開始數據庫遷移...")
-        
         # 刪除現有遷移文件
         delete_migrations()
         
@@ -72,8 +75,7 @@ def main():
             logger.info(f"現有數據表: {tables}")
             
     except Exception as e:
-        logger.error(f"發生錯誤: {str(e)}")
-        logger.error(f"錯誤類型: {type(e)}")
+        logger.error(f"遷移過程中發生錯誤: {str(e)}")
         raise
 
 if __name__ == "__main__":
