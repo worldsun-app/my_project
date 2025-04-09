@@ -288,7 +288,9 @@ class InvestmentDocumentUpdateView(LoginRequiredMixin, UpdateView):
 class InvestmentDocumentDeleteView(LoginRequiredMixin, DeleteView):
     model = InvestmentDocument
     template_name = 'investment/document_confirm_delete.html'
-    success_url = reverse_lazy('documents:investment_document_list')
+
+    def get_success_url(self):
+        return reverse_lazy('documents:investment_documents_list', kwargs={'category': self.object.category})
 
     def delete(self, request, *args, **kwargs):
         messages.success(request, '文件已刪除！')
