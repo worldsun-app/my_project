@@ -27,6 +27,32 @@ def delete_migrations():
                         shutil.rmtree(file_path)
             logger.info(f"{app} 的遷移文件已清理")
 
+def reset_database():
+    """重置數據庫並重新創建所有表"""
+    try:
+        with connection.cursor() as cursor:
+            # 獲取所有表名
+            cursor.execute("""
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_schema = 'public'
+            """)
+            tables = [row[0] for row in cursor.fetchall()]
+            
+            # 刪除所有表
+            for table in tables:
+                logger.info(f"刪除表: {table}")
+                cursor.execute(f'DROP TABLE IF EXISTS "{table}" CASCADE')
+            
+            # 刪除所有遷移記錄
+            cursor.execute("DELETE FROM django_migrations")
+            
+            logger.info("數據庫已重置")
+            
+    except Exception as e:
+        logger.error(f"重置數據庫時發生錯誤: {str(e)}")
+        raise
+
 def check_database():
     """檢查數據庫表結構"""
     try:
@@ -84,8 +110,8 @@ def main():
             cursor.execute("SELECT 1")
             logger.info("數據庫連接成功！")
         
-        # 檢查數據庫表結構
-        check_database()
+        # 重置數據庫
+        reset_database()
         
         # 運行 makemigrations
         logger.info("運行 makemigrations...")
