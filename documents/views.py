@@ -302,38 +302,32 @@ class InvestmentDocumentDeleteView(LoginRequiredMixin, DeleteView):
 @activity_logger('search', 'documents')
 def search_documents(request):
     query = request.GET.get('q', '')
-    if query:
-        # 搜索保險文件
-        insurance_docs = InsuranceDocument.objects.filter(
-            Q(title__icontains=query) | 
-            Q(description__icontains=query) |
-            Q(content__icontains=query),
-            is_active=True
-        )
-        
-        # 搜索投資文件
-        investment_docs = InvestmentDocument.objects.filter(
-            Q(title__icontains=query) | 
-            Q(description__icontains=query) |
-            Q(content__icontains=query),
-            is_active=True
-        )
-        
-        context = {
-            'query': query,
-            'insurance_documents': insurance_docs,
-            'investment_documents': investment_docs,
-            'has_results': insurance_docs.exists() or investment_docs.exists()
-        }
-    else:
-        context = {
-            'query': '',
-            'insurance_documents': [],
-            'investment_documents': [],
-            'has_results': False
-        }
+    if not query:
+        return render(request, 'documents/search_results.html', {
+            'documents': [],
+            'query': query
+        })
     
-    return render(request, 'documents/search_results.html', context)
+    # 使用正確的字段進行搜索
+    insurance_docs = InsuranceDocument.objects.filter(
+        Q(title__icontains=query) |
+        Q(description__icontains=query) |
+        Q(tags__name__icontains=query)
+    ).distinct()
+    
+    investment_docs = InvestmentDocument.objects.filter(
+        Q(title__icontains=query) |
+        Q(description__icontains=query) |
+        Q(tags__name__icontains=query)
+    ).distinct()
+    
+    # 合併結果
+    documents = list(insurance_docs) + list(investment_docs)
+    
+    return render(request, 'documents/search_results.html', {
+        'documents': documents,
+        'query': query
+    })
 
 @login_required
 def document_preview(request, pk):
