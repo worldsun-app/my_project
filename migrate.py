@@ -53,8 +53,8 @@ def reset_database():
         logger.error(f"重置數據庫時發生錯誤: {str(e)}")
         raise
 
-def create_missing_columns():
-    """創建缺失的列"""
+def check_and_fix_database():
+    """檢查並修復數據庫表結構"""
     try:
         with connection.cursor() as cursor:
             # 檢查 documents_insurancedocument 表是否存在
@@ -95,65 +95,24 @@ def create_missing_columns():
                     raise
                 
     except Exception as e:
-        logger.error(f"創建缺失列時發生錯誤: {str(e)}")
-        raise
-
-def check_database():
-    """檢查數據庫表結構"""
-    try:
-        with connection.cursor() as cursor:
-            # 檢查 documents_insurancedocument 表是否存在
-            cursor.execute("""
-                SELECT EXISTS (
-                    SELECT FROM information_schema.tables 
-                    WHERE table_schema = 'public' 
-                    AND table_name = 'documents_insurancedocument'
-                )
-            """)
-            table_exists = cursor.fetchone()[0]
-            
-            if not table_exists:
-                logger.info("documents_insurancedocument 表不存在，將通過遷移創建")
-                return
-            
-            # 檢查 documents_insurancedocument 表的列
-            cursor.execute("""
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_schema = 'public'
-                AND table_name = 'documents_insurancedocument'
-            """)
-            columns = [row[0] for row in cursor.fetchall()]
-            logger.info(f"documents_insurancedocument 表的列: {columns}")
-            
-            # 如果缺少 auto_category 列，添加它
-            if 'auto_category' not in columns:
-                logger.info("添加 auto_category 列...")
-                try:
-                    cursor.execute("""
-                        ALTER TABLE documents_insurancedocument 
-                        ADD COLUMN auto_category VARCHAR(50) DEFAULT ''
-                    """)
-                    logger.info("auto_category 列已添加")
-                except Exception as e:
-                    logger.error(f"添加 auto_category 列時發生錯誤: {str(e)}")
-                    raise
-                
-    except Exception as e:
-        logger.error(f"檢查數據庫時發生錯誤: {str(e)}")
+        logger.error(f"檢查和修復數據庫時發生錯誤: {str(e)}")
         raise
 
 def main():
     logger.info("開始數據庫遷移...")
     
     try:
-        # 刪除現有遷移文件
-        delete_migrations()
+        # 設置 Django 環境
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'my_project.settings')
+        django.setup()
         
         # 檢查數據庫連接
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1")
             logger.info("數據庫連接成功！")
+        
+        # 刪除現有遷移文件
+        delete_migrations()
         
         # 重置數據庫
         reset_database()
@@ -166,11 +125,8 @@ def main():
         logger.info("運行 migrate...")
         call_command('migrate', '--noinput')
         
-        # 檢查數據庫表結構
-        check_database()
-        
-        # 創建缺失的列
-        create_missing_columns()
+        # 檢查並修復數據庫表結構
+        check_and_fix_database()
         
         logger.info("遷移完成！")
         
@@ -204,6 +160,4 @@ def main():
         raise
 
 if __name__ == "__main__":
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'my_project.settings')
-    django.setup()
     main() 
