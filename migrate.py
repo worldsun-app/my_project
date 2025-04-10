@@ -166,6 +166,9 @@ def main():
         logger.info("運行 migrate...")
         call_command('migrate', '--noinput')
         
+        # 檢查數據庫表結構
+        check_database()
+        
         # 創建缺失的列
         create_missing_columns()
         
