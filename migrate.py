@@ -12,6 +12,11 @@ def main():
     logger.info("開始數據庫遷移...")
     
     try:
+        # 設置環境變量
+        os.environ['DATABASE_URL'] = 'postgresql://root:nTVHdED7kehY1pBg30f5L8c9y4KoS6F2@hnd1.clusters.zeabur.com:30596/zeabur'
+        os.environ['DB_HOST'] = 'hnd1.clusters.zeabur.com'
+        os.environ['DB_PORT'] = '30596'
+        
         # 設置 Django 環境
         os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'my_project.settings')
         django.setup()
