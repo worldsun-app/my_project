@@ -53,8 +53,8 @@ def reset_database():
         logger.error(f"重置數據庫時發生錯誤: {str(e)}")
         raise
 
-def check_database():
-    """檢查數據庫表結構"""
+def create_missing_columns():
+    """創建缺失的列"""
     try:
         with connection.cursor() as cursor:
             # 檢查 documents_insurancedocument 表是否存在
@@ -95,7 +95,7 @@ def check_database():
                     raise
                 
     except Exception as e:
-        logger.error(f"檢查數據庫時發生錯誤: {str(e)}")
+        logger.error(f"創建缺失列時發生錯誤: {str(e)}")
         raise
 
 def main():
@@ -120,6 +120,9 @@ def main():
         # 運行遷移
         logger.info("運行 migrate...")
         call_command('migrate', '--noinput')
+        
+        # 創建缺失的列
+        create_missing_columns()
         
         logger.info("遷移完成！")
         
