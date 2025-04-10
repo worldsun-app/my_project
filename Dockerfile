@@ -18,15 +18,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 複製項目文件
 COPY . .
 
-# 收集靜態文件
-RUN python manage.py collectstatic --noinput
-
 # 設置環境變量
 ENV PYTHONUNBUFFERED=1
 ENV DJANGO_SETTINGS_MODULE=my_project.settings
 
-# 暴露端口
-EXPOSE 8080
-
-# 啟動命令
-CMD ["gunicorn", "my_project.wsgi:application", "--bind", "0.0.0.0:8080"] 
+# 運行遷移和啟動服務
+CMD ["sh", "-c", "python migrate.py && gunicorn my_project.wsgi:application --bind 0.0.0.0:8080"] 
