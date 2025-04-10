@@ -34,6 +34,10 @@ def main():
         logger.info("運行 migrate...")
         call_command('migrate', '--noinput')
         
+        # 收集靜態文件
+        logger.info("收集靜態文件...")
+        call_command('collectstatic', '--noinput')
+        
         logger.info("遷移完成！")
         
         # 創建超級用戶
