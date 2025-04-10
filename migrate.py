@@ -36,18 +36,23 @@ def reset_database():
                 SELECT table_name 
                 FROM information_schema.tables 
                 WHERE table_schema = 'public'
+                AND table_type = 'BASE TABLE'
             """)
             tables = [row[0] for row in cursor.fetchall()]
             
-            # 刪除所有表
-            for table in tables:
-                logger.info(f"刪除表: {table}")
-                cursor.execute(f'DROP TABLE IF EXISTS "{table}" CASCADE')
-            
-            # 刪除所有遷移記錄
-            cursor.execute("DELETE FROM django_migrations")
-            
-            logger.info("數據庫已重置")
+            if tables:
+                logger.info("開始刪除現有表...")
+                # 禁用外鍵檢查
+                cursor.execute("SET CONSTRAINTS ALL DEFERRED")
+                
+                # 刪除所有表
+                for table in tables:
+                    logger.info(f"刪除表: {table}")
+                    cursor.execute(f'DROP TABLE IF EXISTS "{table}" CASCADE')
+                
+                logger.info("所有表已刪除")
+            else:
+                logger.info("數據庫為空，無需刪除表")
             
     except Exception as e:
         logger.error(f"重置數據庫時發生錯誤: {str(e)}")
@@ -151,6 +156,7 @@ def main():
                 SELECT table_name 
                 FROM information_schema.tables 
                 WHERE table_schema = 'public'
+                AND table_type = 'BASE TABLE'
             """)
             tables = [row[0] for row in cursor.fetchall()]
             logger.info(f"現有數據表: {tables}")
