@@ -112,7 +112,7 @@ WSGI_APPLICATION = 'my_project.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default='postgresql://root:nTVHdED7kehY1pBg30f5L8c9y4KoS6F2@hnd1.clusters.zeabur.com:30596/zeabur',
+        default=os.environ.get('DATABASE_URL'),
         conn_max_age=600,
         conn_health_checks=True,
     )

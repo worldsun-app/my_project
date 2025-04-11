@@ -732,6 +732,12 @@
                             </li>
                         </ul>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'airtable_sync:airtable_document_list' %}">
+                            <i class="bi bi-file-earmark-text"></i>
+                            Airtable 文檔
+                        </a>
+                    </li>
                 </ul>
                 <form class="search-form d-flex" action="{% url 'documents:search_documents' %}" method="GET">
                     <i class="fas fa-search"></i>
