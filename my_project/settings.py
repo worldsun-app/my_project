@@ -70,6 +70,8 @@ INSTALLED_APPS = [
     'announcements',
     'dbbackup',
     'home',
+    'airtable_sync',
+    'django_crontab',
 ]
 
 MIDDLEWARE = [
@@ -287,3 +289,13 @@ SESSION_COOKIE_AGE = 1209600  # 2週
 WHITENOISE_USE_FINDERS = True
 WHITENOISE_MANIFEST_STRICT = False
 WHITENOISE_ALLOW_ALL_ORIGINS = True
+
+# Airtable Configuration
+AIRTABLE_API_KEY = 'patd32wK8qMEWt246.2282484a912181c82bc7bacdec4fa39fa428c8dec28d51b69d6d160664fecdf0'
+AIRTABLE_BASE_ID = 'appaZyr52E1MMsXtZ'
+AIRTABLE_TABLE_ID = 'tblauHBR2GiSZzvp2'
+
+# 定時任務配置
+CRONJOBS = [
+    ('0 * * * *', 'airtable_sync.services.AirtableSyncService().sync_documents', '>> /tmp/airtable_sync.log 2>&1'),
+]

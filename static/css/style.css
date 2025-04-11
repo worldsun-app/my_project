@@ -49,4 +49,44 @@ body {
     padding: 0.5rem;
     border: 1px solid #ddd;
     border-radius: 4px;
+}
+
+.category-group {
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 1rem;
+}
+
+.category-group:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.category-title {
+    color: #fff;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    margin-bottom: 0.5rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.subcategory-item {
+    display: block;
+    padding: 0.5rem 1rem;
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.subcategory-item:hover {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.1);
+    padding-left: 1.2rem;
+}
+
+.subcategory-item i {
+    width: 20px;
+    text-align: center;
+    margin-right: 0.5rem;
 } 

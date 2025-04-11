@@ -782,30 +782,40 @@
                 <i class="fas fa-folder me-2"></i>文件分類
             </div>
             <div class="subcategory-list">
-                <a href="{% url 'documents:insurance_documents_list' 'products' %}" class="subcategory-item">
-                    <i class="fas fa-file-alt me-2"></i>保險產品資料
-                </a>
-                <a href="{% url 'documents:insurance_documents_list' 'proposals' %}" class="subcategory-item">
-                    <i class="fas fa-file-contract me-2"></i>保險計畫書
-                </a>
-                <a href="{% url 'documents:insurance_documents_list' 'promotions' %}" class="subcategory-item">
-                    <i class="fas fa-percent me-2"></i>保險產品優惠
-                </a>
-                <a href="{% url 'documents:insurance_documents_list' 'info' %}" class="subcategory-item">
-                    <i class="fas fa-info-circle me-2"></i>保險資訊
-                </a>
-                <a href="{% url 'documents:investment_documents_list' 'market_quotes' %}" class="subcategory-item">
-                    <i class="fas fa-chart-line me-2"></i>行情報價
-                </a>
-                <a href="{% url 'documents:investment_documents_list' 'daily_reports' %}" class="subcategory-item">
-                    <i class="fas fa-newspaper me-2"></i>每日報告
-                </a>
-                <a href="{% url 'documents:investment_documents_list' 'macro_reports' %}" class="subcategory-item">
-                    <i class="fas fa-globe me-2"></i>總經報告
-                </a>
-                <a href="{% url 'documents:investment_documents_list' 'stock_reports' %}" class="subcategory-item">
-                    <i class="fas fa-chart-bar me-2"></i>個股報告
-                </a>
+                <div class="category-group">
+                    <div class="category-title">
+                        <i class="fas fa-shield-alt me-2"></i>保險文件
+                    </div>
+                    <a href="{% url 'documents:insurance_documents_list' 'products' %}" class="subcategory-item">
+                        <i class="fas fa-file-alt me-2"></i>保險產品資料
+                    </a>
+                    <a href="{% url 'documents:insurance_documents_list' 'plans' %}" class="subcategory-item">
+                        <i class="fas fa-file-contract me-2"></i>保險計畫書
+                    </a>
+                    <a href="{% url 'documents:insurance_documents_list' 'promotions' %}" class="subcategory-item">
+                        <i class="fas fa-percent me-2"></i>保險產品優惠
+                    </a>
+                    <a href="{% url 'documents:insurance_documents_list' 'info' %}" class="subcategory-item">
+                        <i class="fas fa-info-circle me-2"></i>保險資訊
+                    </a>
+                </div>
+                <div class="category-group">
+                    <div class="category-title">
+                        <i class="fas fa-chart-line me-2"></i>投資文件
+                    </div>
+                    <a href="{% url 'documents:investment_documents_list' 'market_quotes' %}" class="subcategory-item">
+                        <i class="fas fa-chart-line me-2"></i>行情報價
+                    </a>
+                    <a href="{% url 'documents:investment_documents_list' 'daily_reports' %}" class="subcategory-item">
+                        <i class="fas fa-newspaper me-2"></i>每日報告
+                    </a>
+                    <a href="{% url 'documents:investment_documents_list' 'macro_reports' %}" class="subcategory-item">
+                        <i class="fas fa-globe me-2"></i>總經報告
+                    </a>
+                    <a href="{% url 'documents:investment_documents_list' 'stock_reports' %}" class="subcategory-item">
+                        <i class="fas fa-chart-bar me-2"></i>個股報告
+                    </a>
+                </div>
             </div>
         </div>
     </div>

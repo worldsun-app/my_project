@@ -32,6 +32,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
     path('documents/', include('documents.urls')),
+    path('airtable/', include('airtable_sync.urls')),
     path('announcements/', include('announcements.urls')),
     path('', include('home.urls')),
     path('login/', login_view, name='login'),
