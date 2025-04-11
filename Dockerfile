@@ -24,4 +24,5 @@ ENV DEBUG=0
 
 # 執行遷移腳本和啟動應用
 CMD python manage.py migrate && \
+    python manage.py collectstatic --noinput && \
     python manage.py runserver 0.0.0.0:8000 
