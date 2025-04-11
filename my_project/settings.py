@@ -71,7 +71,6 @@ INSTALLED_APPS = [
     'dbbackup',
     'home',
     'airtable_sync',
-    'django_crontab',
 ]
 
 MIDDLEWARE = [
