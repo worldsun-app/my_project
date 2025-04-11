@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 # 設置工作目錄
 WORKDIR /app
@@ -9,18 +9,20 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# 複製依賴文件
-COPY requirements.txt .
-
-# 安裝 Python 依賴
-RUN pip install --no-cache-dir -r requirements.txt
-
 # 複製項目文件
 COPY . .
 
+# 安裝 Python 依賴
+RUN pip install -r requirements.txt
+
+# 創建媒體文件目錄並設置權限
+RUN mkdir -p /app/media && chmod 755 /app/media
+
 # 設置環境變量
 ENV PYTHONUNBUFFERED=1
-ENV DJANGO_SETTINGS_MODULE=my_project.settings
+ENV DEBUG=0
 
-# 運行遷移和啟動服務
-CMD ["sh", "-c", "python migrate.py && gunicorn my_project.wsgi:application --bind 0.0.0.0:8080"] 
+# 執行遷移腳本和啟動應用
+CMD python manage.py migrate && \
+    python manage.py check_database && \
+    python manage.py runserver 0.0.0.0:8000 
