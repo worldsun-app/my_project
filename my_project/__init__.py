@@ -1,3 +1,3 @@
-from .celery import app as celery_app
-
-__all__ = ('celery_app',)
+# 移除 Celery 相關的導入
+# 這個文件可以保持為空，或者只包含版本信息
+__version__ = '1.0.0'
