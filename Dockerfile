@@ -21,8 +21,9 @@ RUN mkdir -p /app/media && chmod 755 /app/media
 # 設置環境變量
 ENV PYTHONUNBUFFERED=1
 ENV DEBUG=0
+ENV PORT=8000
 
 # 執行遷移腳本和啟動應用
 CMD python manage.py migrate && \
     python manage.py collectstatic --noinput && \
-    python manage.py runserver 0.0.0.0:8000 
+    gunicorn my_project.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120 
