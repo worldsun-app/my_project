@@ -198,14 +198,22 @@ const DashboardPage: React.FC = () => {
         {/* 分類內容 */}
         <div className="space-y-12">
           {categoryGroups.map((group) => (
-            <div key={group.sector}>
-              <h2 className="text-xl font-semibold text-gray-800 mb-6">{group.sector}</h2>
+            <div key={group.sector} className="bg-gradient-to-r from-blue-50 to-white p-6 rounded-lg border border-blue-100">
+              <div className="flex items-center mb-8">
+                <h2 className="text-2xl font-bold text-blue-900">{group.sector}</h2>
+                <div className="ml-4 px-3 py-1 bg-blue-100 rounded-full text-sm text-blue-800">
+                  {group.categories.reduce((total, category) => total + category.files.length, 0)} 個文件
+                </div>
+              </div>
               <div className="space-y-8">
                 {group.categories.map((category) => (
-                  <div key={category.name} className="mb-6">
-                    <h3 className="text-xl font-semibold mb-4">{category.name}</h3>
+                  <div key={category.name} className="bg-white rounded-lg shadow-sm p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-medium text-gray-800">{category.name}</h3>
+                      <span className="text-sm text-gray-500">{category.files.length} 個文件</span>
+                    </div>
                     <div className="overflow-x-auto">
-                      <table className="min-w-full bg-white">
+                      <table className="min-w-full">
                         <thead>
                           <tr className="bg-gray-50 border-b">
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">文件名稱</th>
