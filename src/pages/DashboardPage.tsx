@@ -341,8 +341,9 @@ const DashboardPage: React.FC = () => {
                       </svg>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{file.title}</p>
-                      <p className="text-xs text-gray-500">{file.date}</p>
+                      <p className="text-sm font-bold text-gray-900 truncate">{file.name}</p>
+                      <p className="text-xs text-gray-600 truncate mb-1">{file.title}</p>
+                      <p className="text-xs text-gray-400">{file.date}</p>
                     </div>
                   </div>
                 </div>
@@ -372,8 +373,9 @@ const DashboardPage: React.FC = () => {
                               </svg>
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">{file.title}</p>
-                              <p className="text-xs text-gray-500">{file.date}</p>
+                              <p className="text-sm font-bold text-gray-900 truncate">{file.name}</p>
+                              <p className="text-xs text-gray-600 truncate mb-1">{file.title}</p>
+                              <p className="text-xs text-gray-400">{file.date}</p>
                             </div>
                           </div>
                         </div>
@@ -394,7 +396,8 @@ const DashboardPage: React.FC = () => {
             {/* 預覽區頂部 */}
             <div className="p-4 border-b border-gray-200 flex justify-between items-center">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">{selectedFile.title}</h2>
+                <h2 className="text-lg font-semibold text-gray-900">{selectedFile.name}</h2>
+                <p className="text-sm text-gray-600">{selectedFile.title}</p>
                 <p className="text-sm text-gray-500">上次更新：{selectedFile.date}</p>
               </div>
               <div className="flex space-x-2">
