@@ -44,11 +44,22 @@ interface Props {
 }
 
 export const DashboardPage: React.FC<Props> = ({ files }) => {
-  const [filesBySector, setFilesBySector] = useState<Record<string, File[]>>({});
   const [categoryGroups, setCategoryGroups] = useState<CategoryGroup[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  // 使用 useMemo 來計算 filesBySector
+  const filesBySector = useMemo(() => {
+    return files.reduce((acc, file) => {
+      const sector = file.sector || '未分類';
+      if (!acc[sector]) {
+        acc[sector] = [];
+      }
+      acc[sector].push(file);
+      return acc;
+    }, {} as Record<string, File[]>);
+  }, [files]);
 
   useEffect(() => {
     const fetchFiles = async () => {
@@ -75,7 +86,6 @@ export const DashboardPage: React.FC<Props> = ({ files }) => {
           });
         });
 
-        setFilesBySector(filesBySector);
         setCategoryGroups(groups);
       } catch (error) {
         console.error('獲取檔案失敗:', error);
@@ -84,18 +94,6 @@ export const DashboardPage: React.FC<Props> = ({ files }) => {
 
     fetchFiles();
   }, []);
-
-  // 使用 FilesBySector 和 colorSchemes
-  const filesBySector = useMemo(() => {
-    return files.reduce((acc, file) => {
-      const sector = file.sector || '未分類';
-      if (!acc[sector]) {
-        acc[sector] = [];
-      }
-      acc[sector].push(file);
-      return acc;
-    }, {} as Record<string, File[]>);
-  }, [files]);
 
   const handleDownload = (url: string, name: string) => {
     const link = document.createElement('a');
