@@ -93,8 +93,34 @@ const DashboardPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="flex min-h-screen bg-gray-50">
+      {/* 左側導航欄 */}
+      <div className="w-64 bg-white shadow-md">
+        <div className="p-4">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">快速導覽</h2>
+          <nav className="space-y-2">
+            {categoryGroups.map((group) => (
+              <div key={group.sector}>
+                <h3 className="text-sm font-medium text-gray-500 px-2 py-1">
+                  {group.sector}
+                </h3>
+                {group.categories.map((category) => (
+                  <Link
+                    key={category.name}
+                    to={`/category/${group.sector}/${category.name}`}
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
+                  >
+                    {category.name}
+                  </Link>
+                ))}
+              </div>
+            ))}
+          </nav>
+        </div>
+      </div>
+
+      {/* 主內容區 */}
+      <div className="flex-1 p-8">
         <h1 className="text-2xl font-bold text-gray-800 mb-8">財經資訊平台</h1>
         
         {/* 最新檔案 */}
