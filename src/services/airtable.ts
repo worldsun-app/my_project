@@ -27,15 +27,15 @@ const airtableApi = axios.create({
 });
 
 // 定義檔案類型
-interface File {
+export type File = {
   name: string;
-  title?: string;
+  title: string;
   downloadUrl: string;
-  date?: string;
-  sector?: string;
+  date: string;
+  sector: string;
   category: string;
   attachment: any;
-}
+};
 
 // 定義回傳類型
 type FilesBySector = Record<string, {
@@ -44,118 +44,72 @@ type FilesBySector = Record<string, {
 }>;
 
 // 獲取並分類檔案
-export const getFilesGroupedBySector = async (): Promise<FilesBySector> => {
+export async function getFilesGroupedBySector(): Promise<Record<string, File[]>> {
+  console.log('開始獲取檔案列表...');
+  
   try {
-    console.log('開始獲取檔案列表...');
-    const response = await airtableApi.get('', {
-      params: {
-        view: 'Grid view',
-      },
-    });
-
-    // 打印完整的響應數據
-    console.log('Airtable 完整響應:', JSON.stringify(response.data, null, 2));
-
-    // 將檔案按 sector 和 category 分組
-    const filesBySector: FilesBySector = {};
-    
-    if (!response.data.records || !Array.isArray(response.data.records)) {
-      console.error('無效的響應數據格式:', response.data);
-      return {};
-    }
-
-    response.data.records.forEach((record: any) => {
-      const fields = record.fields || {};
-      console.log('完整記錄數據:', JSON.stringify(record, null, 2));
-      console.log('記錄字段:', fields);
-
-      // 獲取必要的欄位，使用預設值處理空值情況
-      const name = fields.Name || fields.name || '未命名文件';
-      const title = fields.Title || fields.title || '';
-      const category = fields.Category || fields.category || '未分類';
-      const sector = fields.Sector || fields.sector || '其他';
-      const date = fields.Date || fields.date || null;
-      const attachments = fields.Attachments || fields.attachments || [];
-
-      console.log('處理文件:', {
-        name,
-        title,
-        category,
-        sector,
-        date,
-        attachments
-      });
-
-      // 檢查是否有附件
-      if (attachments && Array.isArray(attachments) && attachments.length > 0) {
-        const attachment = attachments[0];
-        console.log('找到附件:', attachment);
-
-        const file: File = {
-          name,
-          title,
-          downloadUrl: attachment.url,
-          date,
-          sector,
-          category,
-          attachment: attachments
-        };
-
-        // 初始化 sector
-        if (!filesBySector[sector]) {
-          filesBySector[sector] = {
-            sector,
-            categories: {}
-          };
-        }
-
-        // 初始化 category
-        if (!filesBySector[sector].categories[category]) {
-          filesBySector[sector].categories[category] = [];
-        }
-
-        filesBySector[sector].categories[category].push(file);
-        console.log(`添加文件到 ${sector}/${category}:`, file.name);
-      } else {
-        console.log('跳過沒有附件的記錄:', name, '附件數據:', attachments);
+    const response = await fetch(`${baseURL}/Files`, {
+      headers: {
+        'Authorization': `Bearer ${AIRTABLE_API_KEY}`
       }
     });
 
-    // 檢查處理後的數據
-    const summary = {
-      sectors: Object.keys(filesBySector),
-      categories: Object.values(filesBySector).flatMap(sector => 
-        Object.keys(sector.categories)
-      ),
-      totalFiles: Object.values(filesBySector).reduce((total, sector) => 
-        total + Object.values(sector.categories).reduce((sum, files) => sum + files.length, 0), 0)
-    };
+    const data = await response.json();
+    console.log('Airtable 完整響應:', data);
 
-    console.log('處理後的檔案分類摘要:', summary);
-    console.log('完整的檔案分類數據:', JSON.stringify(filesBySector, null, 2));
+    const filesBySector: Record<string, File[]> = {};
 
-    return filesBySector;
-  } catch (error) {
-    console.error('獲取檔案列表失敗:', error);
-    if (axios.isAxiosError(error)) {
-      console.error('錯誤詳情:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        config: {
-          url: error.config?.url,
-          method: error.config?.method,
-          baseURL: error.config?.baseURL,
-          params: error.config?.params
-        }
-      });
+    for (const record of data.records) {
+      console.log('完整記錄數據:', record);
+      console.log('記錄字段:', record.fields);
+
+      const {
+        name,
+        title,
+        sector,
+        category,
+        date,
+        attachment
+      } = record.fields;
+
+      console.log('處理文件:', record.fields);
+
+      // 確保所有必要字段都存在
+      if (!name || !sector || !attachment || !attachment[0]) {
+        console.log(`跳過不完整記錄: ${name || '未命名文件'}`, {
+          name,
+          sector,
+          hasAttachment: !!attachment
+        });
+        continue;
+      }
+
+      const file: File = {
+        name,
+        title: title || name,
+        sector,
+        category: category || '未分類',
+        date: date || new Date().toISOString().split('T')[0],
+        downloadUrl: attachment[0].url,
+        attachment: attachment[0]
+      };
+
+      if (!filesBySector[sector]) {
+        filesBySector[sector] = [];
+      }
+      filesBySector[sector].push(file);
+      console.log(`成功添加文件: ${name} 到 ${sector} 分類`);
     }
+
+    console.log('處理後的檔案分類摘要:', Object.keys(filesBySector));
+    console.log('完整的檔案分類數據:', filesBySector);
+    return filesBySector;
+
+  } catch (error) {
+    console.error('獲取檔案列表時出錯:', error);
     throw error;
   }
-};
-
-// 匯出類型
-export type { File, FilesBySector };
+}
 
 // Airtable 服务
 export const airtable = {

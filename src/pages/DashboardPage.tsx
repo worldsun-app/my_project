@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getFilesGroupedBySector } from '../services/airtable';
-import { File } from '../services/airtable';
+import { getFilesGroupedBySector, type File } from '../services/airtable';
 
-interface CategoryGroup {
+// 定義類型
+type Category = {
+  name: string;
+  files: File[];
+};
+
+type CategoryGroup = {
   sector: string;
-  categories: Array<{
-    name: string;
-    files: File[];
-  }>;
-}
+  categories: Category[];
+};
 
 // 預定義的顏色方案
 const colorSchemes = [
@@ -35,8 +37,8 @@ const DashboardPage: React.FC = () => {
         Object.entries(filesBySector).forEach(([sector, categories]) => {
           console.log('處理 sector:', sector);
           const categoryList = Object.entries(categories).map(([name, files]) => {
-            console.log('處理 category:', name, '文件數量:', files.length);
             const fileArray = Array.isArray(files) ? files : [];
+            console.log('處理 category:', name, '文件數量:', fileArray.length);
             return {
               name,
               files: fileArray,
@@ -80,13 +82,17 @@ const DashboardPage: React.FC = () => {
     });
   };
 
-  const handleDownload = (url: string, filename: string) => {
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownload = (file: File) => {
+    if (file.attachment && file.attachment.url) {
+      const link = document.createElement('a');
+      link.href = file.attachment.url;
+      link.download = file.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      console.error('No attachment URL found for file:', file.name);
+    }
   };
 
   if (isLoading) {
@@ -136,7 +142,7 @@ const DashboardPage: React.FC = () => {
               group.categories.flatMap(category => 
                 getLatestFiles(category.files)
               )
-            ).slice(0, 6).map((file, index) => (
+            ).slice(0, 6).map((file) => (
               <div
                 key={file.name}
                 className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
@@ -154,7 +160,7 @@ const DashboardPage: React.FC = () => {
                     </p>
                   </div>
                   <button
-                    onClick={() => handleDownload(file.downloadUrl, file.name)}
+                    onClick={() => handleDownload(file)}
                     className="mt-4 w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
                   >
                     下載
@@ -172,41 +178,21 @@ const DashboardPage: React.FC = () => {
               <h2 className="text-xl font-semibold text-gray-800 mb-6">{group.sector}</h2>
               <div className="space-y-8">
                 {group.categories.map((category) => (
-                  <div key={category.name}>
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-lg font-medium text-gray-800">{category.name}</h3>
-                      <Link
-                        to={`/category/${group.sector}/${category.name}`}
-                        className="text-sm text-blue-600 hover:text-blue-800"
-                      >
-                        查看更多
-                      </Link>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {getLatestFiles(category.files).map((file) => (
-                        <div
-                          key={file.name}
-                          className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
-                        >
-                          <div className="flex flex-col h-full">
-                            <div className="flex-1">
-                              <h4 className="text-lg font-medium text-gray-800 mb-1">
-                                {file.name}
-                              </h4>
-                              <p className="text-sm text-gray-600 mb-2">
-                                {file.title}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                {file.date ? formatDate(file.date) : '無日期'}
-                              </p>
-                            </div>
-                            <button
-                              onClick={() => handleDownload(file.downloadUrl, file.name)}
-                              className="mt-4 w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
-                            >
-                              下載
-                            </button>
-                          </div>
+                  <div key={category.name} className="mb-6">
+                    <h3 className="text-xl font-semibold mb-4">{category.name}</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {category.files.map((file) => (
+                        <div key={file.name} className="bg-white p-4 rounded-lg shadow-md">
+                          <h4 className="font-semibold mb-2">{file.title}</h4>
+                          <p className="text-gray-600 mb-2">日期: {file.date}</p>
+                          <a
+                            href={file.downloadUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            下載檔案
+                          </a>
                         </div>
                       ))}
                     </div>
