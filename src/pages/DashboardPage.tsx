@@ -58,10 +58,12 @@ const DashboardPage: React.FC = () => {
     }
 
     setIsSearching(true);
+    const searchTermLower = term.toLowerCase();
     const results = categoryGroups.flatMap(group =>
       group.categories.flatMap(category =>
         category.files.filter(file =>
-          file.name.toLowerCase().includes(term.toLowerCase())
+          file.name.toLowerCase().includes(searchTermLower) ||
+          file.title.toLowerCase().includes(searchTermLower)
         )
       )
     );
@@ -204,7 +206,7 @@ const DashboardPage: React.FC = () => {
           <div className="relative">
             <input
               type="text"
-              placeholder="搜索文件名稱..."
+              placeholder="搜索文件名稱或標題..."
               value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -225,6 +227,11 @@ const DashboardPage: React.FC = () => {
               <div className="ml-4 px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-800">
                 找到 {searchResults.length} 個文件
               </div>
+              {searchResults.length > 0 && (
+                <div className="ml-4 text-sm text-gray-500">
+                  （搜索範圍：文件名稱和標題）
+                </div>
+              )}
             </div>
             {searchResults.length > 0 ? (
               <div className="bg-white rounded-lg shadow-sm p-6">
