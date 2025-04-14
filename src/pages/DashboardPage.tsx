@@ -100,7 +100,7 @@ const DashboardPage: React.FC = () => {
           <h2 className="text-lg font-semibold text-gray-800 mb-4">快速導覽</h2>
           <nav className="space-y-2">
             {categoryGroups.map((group) => (
-              <div key={group.sector}>
+              <div key={group.sector} className="mb-4">
                 <h3 className="text-sm font-medium text-gray-500 px-2 py-1">
                   {group.sector}
                 </h3>
@@ -134,36 +134,40 @@ const DashboardPage: React.FC = () => {
             ).slice(0, 6).map((file, index) => (
               <div
                 key={file.name}
-                className={`p-6 rounded-lg border ${colorSchemes[index % colorSchemes.length].borderColor} ${colorSchemes[index % colorSchemes.length].bgColor}`}
+                className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
               >
-                <h3 className={`text-lg font-medium ${colorSchemes[index % colorSchemes.length].textColor}`}>
-                  {file.name}
-                </h3>
-                <p className="text-sm text-gray-600 mt-2">
-                  {file.date ? formatDate(file.date) : '無日期'}
-                </p>
-                <button
-                  onClick={() => handleDownload(file.downloadUrl, file.name)}
-                  className="mt-4 text-sm text-blue-600 hover:text-blue-800"
-                >
-                  下載
-                </button>
+                <div className="flex flex-col h-full">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-medium text-gray-800 mb-1">
+                      {file.name}
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-2">
+                      {file.title}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {file.date ? formatDate(file.date) : '無日期'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleDownload(file.downloadUrl, file.name)}
+                    className="mt-4 w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+                  >
+                    下載
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         </div>
 
         {/* 分類內容 */}
-        <div className="space-y-8">
-          {categoryGroups.map((group, groupIndex) => (
+        <div className="space-y-12">
+          {categoryGroups.map((group) => (
             <div key={group.sector}>
               <h2 className="text-xl font-semibold text-gray-800 mb-6">{group.sector}</h2>
-              <div className="space-y-6">
-                {group.categories.map((category, categoryIndex) => (
-                  <div
-                    key={category.name}
-                    className="bg-white rounded-lg shadow-sm p-6"
-                  >
+              <div className="space-y-8">
+                {group.categories.map((category) => (
+                  <div key={category.name}>
                     <div className="flex justify-between items-center mb-4">
                       <h3 className="text-lg font-medium text-gray-800">{category.name}</h3>
                       <Link
@@ -173,24 +177,31 @@ const DashboardPage: React.FC = () => {
                         查看更多
                       </Link>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {getLatestFiles(category.files).map((file, fileIndex) => (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {getLatestFiles(category.files).map((file) => (
                         <div
                           key={file.name}
-                          className={`p-4 rounded-lg border ${colorSchemes[(groupIndex + categoryIndex + fileIndex) % colorSchemes.length].borderColor} ${colorSchemes[(groupIndex + categoryIndex + fileIndex) % colorSchemes.length].bgColor}`}
+                          className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
                         >
-                          <h4 className={`font-medium ${colorSchemes[(groupIndex + categoryIndex + fileIndex) % colorSchemes.length].textColor}`}>
-                            {file.name}
-                          </h4>
-                          <p className="text-sm text-gray-600 mt-1">
-                            {file.date ? formatDate(file.date) : '無日期'}
-                          </p>
-                          <button
-                            onClick={() => handleDownload(file.downloadUrl, file.name)}
-                            className="mt-2 text-sm text-blue-600 hover:text-blue-800"
-                          >
-                            下載
-                          </button>
+                          <div className="flex flex-col h-full">
+                            <div className="flex-1">
+                              <h4 className="text-lg font-medium text-gray-800 mb-1">
+                                {file.name}
+                              </h4>
+                              <p className="text-sm text-gray-600 mb-2">
+                                {file.title}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {file.date ? formatDate(file.date) : '無日期'}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => handleDownload(file.downloadUrl, file.name)}
+                              className="mt-4 w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+                            >
+                              下載
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
