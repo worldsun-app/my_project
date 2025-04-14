@@ -10,6 +10,7 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
+    "@fontsource/noto-sans-tc": "^5.2.5",
     "@types/react-router-dom": "^5.3.3",
     "axios": "^1.8.4",
     "firebase": "^11.6.0",
