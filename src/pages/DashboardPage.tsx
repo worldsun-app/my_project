@@ -34,20 +34,21 @@ const DashboardPage: React.FC = () => {
         console.log('獲取到的原始數據:', filesBySector);
         const groups: CategoryGroup[] = [];
 
-        Object.entries(filesBySector).forEach(([sector, categories]) => {
-          console.log('處理 sector:', sector);
-          const categoryList = Object.entries(categories).map(([name, files]) => {
-            const fileArray = Array.isArray(files) ? files : [];
-            console.log('處理 category:', name, '文件數量:', fileArray.length);
-            return {
-              name,
-              files: fileArray,
-            };
+        Object.entries(filesBySector).forEach(([sectorName, sectorData]) => {
+          console.log('處理 sector:', sectorName);
+          const categoryList: Category[] = [];
+
+          Object.entries(sectorData.categories).forEach(([categoryName, files]) => {
+            console.log('處理 category:', categoryName, '文件數量:', files.length);
+            categoryList.push({
+              name: categoryName,
+              files: files
+            });
           });
 
           groups.push({
-            sector,
-            categories: categoryList,
+            sector: sectorName,
+            categories: categoryList
           });
         });
 
