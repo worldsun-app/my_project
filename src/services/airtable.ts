@@ -1,20 +1,35 @@
 import axios from 'axios';
 
 // Airtable API 配置
-const AIRTABLE_API_KEY = import.meta.env.VITE_AIRTABLE_API_KEY;
-const AIRTABLE_BASE_ID = import.meta.env.VITE_AIRTABLE_BASE_ID;
-const AIRTABLE_TABLE_NAME = import.meta.env.VITE_AIRTABLE_TABLE_NAME;
+const AIRTABLE_API_KEY = process.env.VITE_AIRTABLE_API_KEY || import.meta.env.VITE_AIRTABLE_API_KEY;
+const AIRTABLE_BASE_ID = process.env.VITE_AIRTABLE_BASE_ID || import.meta.env.VITE_AIRTABLE_BASE_ID;
+const AIRTABLE_TABLE_NAME = process.env.VITE_AIRTABLE_TABLE_NAME || import.meta.env.VITE_AIRTABLE_TABLE_NAME;
 
-// 檢查配置
-if (!AIRTABLE_API_KEY) {
-  console.error('錯誤: VITE_AIRTABLE_API_KEY 未設置');
-}
-if (!AIRTABLE_BASE_ID) {
-  console.error('錯誤: VITE_AIRTABLE_BASE_ID 未設置');
-}
-if (!AIRTABLE_TABLE_NAME) {
-  console.error('錯誤: VITE_AIRTABLE_TABLE_NAME 未設置');
-}
+// 檢查環境變量
+const checkEnvironmentVariables = () => {
+  const missingVars = [];
+  
+  if (!AIRTABLE_API_KEY) {
+    missingVars.push('VITE_AIRTABLE_API_KEY');
+    console.error('VITE_AIRTABLE_API_KEY:', process.env.VITE_AIRTABLE_API_KEY, import.meta.env.VITE_AIRTABLE_API_KEY);
+  }
+  if (!AIRTABLE_BASE_ID) {
+    missingVars.push('VITE_AIRTABLE_BASE_ID');
+    console.error('VITE_AIRTABLE_BASE_ID:', process.env.VITE_AIRTABLE_BASE_ID, import.meta.env.VITE_AIRTABLE_BASE_ID);
+  }
+  if (!AIRTABLE_TABLE_NAME) {
+    missingVars.push('VITE_AIRTABLE_TABLE_NAME');
+    console.error('VITE_AIRTABLE_TABLE_NAME:', process.env.VITE_AIRTABLE_TABLE_NAME, import.meta.env.VITE_AIRTABLE_TABLE_NAME);
+  }
+
+  if (missingVars.length > 0) {
+    console.error('缺少必要的環境變量:', missingVars.join(', '));
+    throw new Error(`缺少必要的環境變量: ${missingVars.join(', ')}`);
+  }
+};
+
+// 在初始化時檢查環境變量
+checkEnvironmentVariables();
 
 const baseURL = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME}`;
 console.log('Airtable API URL:', baseURL);

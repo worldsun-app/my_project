@@ -25,10 +25,12 @@ const colorSchemes = [
 const DashboardPage: React.FC = () => {
   const [categoryGroups, setCategoryGroups] = useState<CategoryGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchFiles = async () => {
       try {
+        setError(null);
         console.log('開始獲取文件...');
         const filesBySector = await getFilesGroupedBySector();
         console.log('獲取到的原始數據:', filesBySector);
@@ -56,6 +58,7 @@ const DashboardPage: React.FC = () => {
         setCategoryGroups(groups);
       } catch (error) {
         console.error('獲取文件失敗:', error);
+        setError(error instanceof Error ? error.message : '獲取文件時發生錯誤');
       } finally {
         setIsLoading(false);
       }
@@ -99,7 +102,27 @@ const DashboardPage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p>載入中...</p>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>載入中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center p-8 bg-red-50 rounded-lg">
+          <h2 className="text-xl font-semibold text-red-700 mb-4">發生錯誤</h2>
+          <p className="text-red-600">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+          >
+            重試
+          </button>
+        </div>
       </div>
     );
   }
