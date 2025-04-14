@@ -53,7 +53,8 @@ export const getFilesGroupedBySector = async (): Promise<FilesBySector> => {
       },
     });
 
-    console.log('Airtable 響應:', response.data);
+    // 打印完整的響應數據
+    console.log('Airtable 完整響應:', JSON.stringify(response.data, null, 2));
 
     // 將檔案按 sector 和 category 分組
     const filesBySector: FilesBySector = {};
@@ -65,27 +66,31 @@ export const getFilesGroupedBySector = async (): Promise<FilesBySector> => {
 
     response.data.records.forEach((record: any) => {
       const fields = record.fields || {};
-      console.log('處理記錄:', fields);
+      console.log('完整記錄數據:', JSON.stringify(record, null, 2));
+      console.log('記錄字段:', fields);
 
       // 獲取必要的欄位，使用預設值處理空值情況
-      const name = fields.Name || '未命名文件';
-      const title = fields.Title || '';
-      const category = fields.Category || '未分類';
-      const sector = fields.Sector || '其他';
-      const date = fields.Date || null;
-      const attachments = fields.Attachments || [];
+      const name = fields.Name || fields.name || '未命名文件';
+      const title = fields.Title || fields.title || '';
+      const category = fields.Category || fields.category || '未分類';
+      const sector = fields.Sector || fields.sector || '其他';
+      const date = fields.Date || fields.date || null;
+      const attachments = fields.Attachments || fields.attachments || [];
 
       console.log('處理文件:', {
         name,
         title,
         category,
         sector,
-        hasAttachments: attachments.length > 0
+        date,
+        attachments
       });
 
       // 檢查是否有附件
-      if (attachments.length > 0) {
+      if (attachments && Array.isArray(attachments) && attachments.length > 0) {
         const attachment = attachments[0];
+        console.log('找到附件:', attachment);
+
         const file: File = {
           name,
           title,
@@ -112,7 +117,7 @@ export const getFilesGroupedBySector = async (): Promise<FilesBySector> => {
         filesBySector[sector].categories[category].push(file);
         console.log(`添加文件到 ${sector}/${category}:`, file.name);
       } else {
-        console.log('跳過沒有附件的記錄:', name);
+        console.log('跳過沒有附件的記錄:', name, '附件數據:', attachments);
       }
     });
 
@@ -127,7 +132,7 @@ export const getFilesGroupedBySector = async (): Promise<FilesBySector> => {
     };
 
     console.log('處理後的檔案分類摘要:', summary);
-    console.log('完整的檔案分類數據:', filesBySector);
+    console.log('完整的檔案分類數據:', JSON.stringify(filesBySector, null, 2));
 
     return filesBySector;
   } catch (error) {
