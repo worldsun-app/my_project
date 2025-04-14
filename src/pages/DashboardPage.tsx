@@ -215,6 +215,25 @@ const DashboardPage: React.FC = () => {
       {/* 左側導航欄 */}
       <div className="w-64 bg-white shadow-md">
         <div className="p-4">
+          {/* 平台標題 */}
+          <div className="mb-6">
+            <h1 className="text-xl font-bold text-gray-800">財經資訊平台</h1>
+          </div>
+
+          {/* 登入狀態 */}
+          <div className="mb-6 p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center space-x-3">
+              <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                <span className="text-blue-600 font-medium">U</span>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-700">使用者名稱</p>
+                <p className="text-xs text-gray-500">user@example.com</p>
+              </div>
+            </div>
+          </div>
+
+          {/* 返回首頁按鈕 */}
           <div 
             onClick={handleGoHome}
             className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 cursor-pointer mb-6"
@@ -224,6 +243,8 @@ const DashboardPage: React.FC = () => {
             </svg>
             <span className="font-medium">返回首頁</span>
           </div>
+
+          {/* 快速導覽 */}
           <h2 className="text-lg font-semibold text-gray-800 mb-4">快速導覽</h2>
           <div className="space-y-2">
             {categoryGroups.map((group) => (
@@ -253,25 +274,8 @@ const DashboardPage: React.FC = () => {
 
       {/* 主內容區 */}
       <div className="flex-1 p-8">
+        {/* 搜索框 */}
         <div className="mb-8">
-          <div 
-            onClick={handleGoHome}
-            className="flex items-center space-x-2 cursor-pointer group"
-          >
-            <h1 className="text-2xl font-bold text-gray-800 group-hover:text-blue-600 transition-colors">
-              財經資訊平台
-            </h1>
-            <svg 
-              className="h-5 w-5 text-gray-400 group-hover:text-blue-600 transition-colors" 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          
-          {/* 搜索框 */}
           <div className="relative">
             <input
               type="text"
