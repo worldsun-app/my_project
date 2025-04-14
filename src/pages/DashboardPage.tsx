@@ -225,26 +225,26 @@ const DashboardPage: React.FC = () => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* 左側導航欄 */}
-      <div className="w-64 bg-white shadow-md flex-shrink-0">
+      <div className="w-64 bg-slate-800 flex-shrink-0">
         <div className="p-4">
           {/* 平台標題 */}
           <div className="mb-6">
-            <h1 className="text-xl font-bold text-gray-800">財經資訊平台</h1>
+            <h1 className="text-xl font-bold text-white">財經資訊平台</h1>
           </div>
 
           {/* 用戶登入狀態 */}
-          <div className="mb-6 p-3 bg-gray-50 rounded-lg">
+          <div className="mb-6 p-3 bg-slate-700 rounded-lg">
             <div className="flex items-center space-x-3 mb-3">
-              <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                <span className="text-blue-600 font-medium">
-                  {user?.username ? user.username[0].toUpperCase() : 'U'}
+              <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
+                <span className="text-white font-medium">
+                  {user?.email ? user.email[0].toUpperCase() : 'U'}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-700 truncate">
-                  {user?.username || '訪客'}
+                <p className="text-sm font-medium text-white truncate">
+                  {user?.displayName || '使用者'}
                 </p>
-                <p className="text-xs text-gray-500 truncate">
+                <p className="text-xs text-gray-300 truncate">
                   {user?.email || '未登入'}
                 </p>
               </div>
@@ -252,7 +252,7 @@ const DashboardPage: React.FC = () => {
             <div className="flex justify-end">
               <button
                 onClick={handleLogout}
-                className="text-sm text-gray-600 hover:text-red-600 transition-colors flex items-center space-x-1"
+                className="text-sm text-gray-300 hover:text-red-400 transition-colors flex items-center space-x-1"
               >
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -265,7 +265,7 @@ const DashboardPage: React.FC = () => {
           {/* 返回首頁按鈕 */}
           <div 
             onClick={handleGoHome}
-            className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 cursor-pointer mb-6"
+            className="flex items-center space-x-2 text-gray-300 hover:text-blue-400 cursor-pointer mb-6"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -274,13 +274,13 @@ const DashboardPage: React.FC = () => {
           </div>
 
           {/* 快速導覽 */}
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">快速導覽</h2>
+          <h2 className="text-lg font-semibold text-gray-300 mb-4">快速導覽</h2>
           <div className="space-y-2">
             {categoryGroups.map((group) => (
               <div key={group.sector}>
                 <button
                   onClick={() => navigate(`/sector/${group.sector}`)}
-                  className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="w-full text-left px-4 py-2 text-gray-300 hover:bg-slate-700 rounded-lg transition-colors"
                 >
                   {group.sector}
                 </button>
@@ -289,7 +289,7 @@ const DashboardPage: React.FC = () => {
                     <button
                       key={category.name}
                       onClick={() => navigate(`/category/${category.name}`)}
-                      className="w-full text-left px-4 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                      className="w-full text-left px-4 py-1 text-sm text-gray-400 hover:bg-slate-700 rounded-lg transition-colors"
                     >
                       {category.name}
                     </button>
