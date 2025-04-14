@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { File, getFilesGroupedBySector, FilesBySector } from '../services/airtable';
 import { formatDate } from '../utils/dateUtils';
@@ -39,8 +39,12 @@ const getLatestFiles = (files: File[]) => {
     .slice(0, 6);
 };
 
-const DashboardPage: React.FC = () => {
-  const [files, setFiles] = useState<File[]>([]);
+interface Props {
+  files: File[];
+}
+
+export const DashboardPage: React.FC<Props> = ({ files }) => {
+  const [filesBySector, setFilesBySector] = useState<Record<string, File[]>>({});
   const [categoryGroups, setCategoryGroups] = useState<CategoryGroup[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -71,7 +75,7 @@ const DashboardPage: React.FC = () => {
           });
         });
 
-        setFiles(allFiles);
+        setFilesBySector(filesBySector);
         setCategoryGroups(groups);
       } catch (error) {
         console.error('獲取檔案失敗:', error);
@@ -80,6 +84,18 @@ const DashboardPage: React.FC = () => {
 
     fetchFiles();
   }, []);
+
+  // 使用 FilesBySector 和 colorSchemes
+  const filesBySector = useMemo(() => {
+    return files.reduce((acc, file) => {
+      const sector = file.sector || '未分類';
+      if (!acc[sector]) {
+        acc[sector] = [];
+      }
+      acc[sector].push(file);
+      return acc;
+    }, {} as Record<string, File[]>);
+  }, [files]);
 
   const handleDownload = (url: string, name: string) => {
     const link = document.createElement('a');

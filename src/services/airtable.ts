@@ -123,12 +123,39 @@ export const airtable = {
   },
   
   // 获取分类文件
-  getFilesByCategory: async (category: string) => {
-    // 待实现
+  getFilesByCategory: async (category: string): Promise<File[]> => {
+    try {
+      const response = await airtableApi.get('/Files', {
+        params: {
+          filterByFormula: `{Category} = '${category}'`
+        }
+      });
+      return response.data.records.map((record: any) => ({
+        id: record.id,
+        name: record.fields.Name as string,
+        url: (record.fields.Attachments as any[])?.[0]?.url || '',
+        category: record.fields.Category as string,
+        sector: record.fields.Sector as string,
+        date: record.fields.Date as string
+      }));
+    } catch (error) {
+      console.error('Error fetching files by category:', error);
+      return [];
+    }
   },
   
   // 下载文件
-  downloadFile: async (fileId: string) => {
-    // 待实现
+  downloadFile: async (fileId: string): Promise<string> => {
+    try {
+      const response = await airtableApi.get(`/Files/${fileId}`);
+      const attachments = response.data.fields.Attachments as any[];
+      if (attachments && attachments.length > 0) {
+        return attachments[0].url;
+      }
+      throw new Error('No attachment found');
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      throw error;
+    }
   }
 }; 

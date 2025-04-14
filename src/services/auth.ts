@@ -17,12 +17,11 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
 // 登入函數
-export const login = async (email: string, password: string): Promise<User> => {
+export const login = async (email: string, password: string): Promise<void> => {
   try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    return userCredential.user;
+    await signInWithEmailAndPassword(auth, email, password);
   } catch (error) {
-    console.error('登入失敗:', error);
+    console.error('Login error:', error);
     throw error;
   }
 };
