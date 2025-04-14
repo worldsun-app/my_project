@@ -224,7 +224,7 @@ const CategoryPage: React.FC = () => {
         {selectedFile ? (
           <div className="h-full flex flex-col">
             {/* 預覽區頂部 */}
-            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">{selectedFile.name}</h2>
                 <p className="text-sm text-gray-600">{selectedFile.title}</p>
