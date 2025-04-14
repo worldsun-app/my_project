@@ -47,6 +47,7 @@ const DashboardPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<File[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const navigate = useNavigate();
 
   // 搜索功能
@@ -213,7 +214,7 @@ const DashboardPage: React.FC = () => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* 左側導航欄 */}
-      <div className="w-64 bg-white shadow-md">
+      <div className="w-64 bg-white shadow-md flex-shrink-0">
         <div className="p-4">
           {/* 平台標題 */}
           <div className="mb-6">
@@ -272,200 +273,132 @@ const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 主內容區 */}
-      <div className="flex-1 p-8">
-        {/* 搜索框 */}
-        <div className="mb-8">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="搜索文件名稱或標題..."
-              value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <div className="absolute right-3 top-2.5 text-gray-400">
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+      {/* 中間文件列表 */}
+      <div className="w-96 border-r border-gray-200 bg-white">
+        <div className="p-4">
+          {/* 搜索框 */}
+          <div className="mb-4">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="搜索文件名稱或標題..."
+                value={searchTerm}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <div className="absolute right-3 top-2.5 text-gray-400">
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* 搜索結果 */}
-        {isSearching && (
-          <div className="mb-12 bg-gradient-to-r from-gray-50 to-white p-6 rounded-lg border border-gray-100">
-            <div className="flex items-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-900">搜索結果</h2>
-              <div className="ml-4 px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-800">
-                找到 {searchResults.length} 個文件
-              </div>
-              {searchResults.length > 0 && (
-                <div className="ml-4 text-sm text-gray-500">
-                  （搜索範圍：文件名稱和標題）
-                </div>
-              )}
-            </div>
-            {searchResults.length > 0 ? (
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full">
-                    <thead>
-                      <tr className="bg-gray-50 border-b">
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">文件名稱</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">標題</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">分類</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日期</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {searchResults.map((file) => (
-                        <tr key={file.name} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {file.name}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {file.title}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {file.sector} / {file.category}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {file.date ? formatDate(file.date) : '無日期'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <DownloadButtons file={file} />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-8 bg-white rounded-lg">
-                <p className="text-gray-500">沒有找到相關文件</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* 最新檔案（當不在搜索時顯示） */}
-        {!isSearching && (
-          <>
-            <div className="mb-12 bg-gradient-to-r from-purple-50 to-white p-6 rounded-lg border border-purple-100">
-              <div className="flex items-center mb-8">
-                <h2 className="text-2xl font-bold text-purple-900">最新檔案</h2>
-                <div className="ml-4 px-3 py-1 bg-purple-100 rounded-full text-sm text-purple-800">
-                  最近更新
-                </div>
-              </div>
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full">
-                    <thead>
-                      <tr className="bg-gray-50 border-b">
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">文件名稱</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">標題</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">分類</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日期</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {categoryGroups.flatMap(group => 
-                        group.categories.flatMap(category => 
-                          getLatestFiles(category.files)
-                        )
-                      ).slice(0, 6).map((file) => (
-                        <tr key={file.name} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {file.name}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {file.title}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {file.sector} / {file.category}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {file.date ? formatDate(file.date) : '無日期'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <DownloadButtons file={file} />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* 分類內容（當不在搜索時顯示） */}
-        {!isSearching && (
-          <>
-            <div className="space-y-12">
-              {categoryGroups.map((group) => {
-                const colors = sectorColors[group.sector] || sectorColors['保險'];
-                return (
-                  <div key={group.sector} className={`bg-gradient-to-r ${colors.from} ${colors.to} p-6 rounded-lg border ${colors.border}`}>
-                    <div className="flex items-center mb-8">
-                      <h2 className={`text-2xl font-bold ${colors.text.replace('text-', 'text-').replace('-800', '-900')}`}>
-                        {group.sector}
-                      </h2>
-                      <div className={`ml-4 px-3 py-1 ${colors.bg} rounded-full text-sm ${colors.text}`}>
-                        {group.categories.reduce((total, category) => total + category.files.length, 0)} 個文件
-                      </div>
+          {/* 文件列表 */}
+          <div className="space-y-2">
+            {isSearching ? (
+              // 搜索結果列表
+              searchResults.map((file) => (
+                <div
+                  key={file.name}
+                  onClick={() => setSelectedFile(file)}
+                  className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                    selectedFile?.name === file.name ? 'bg-blue-50 border border-blue-200' : 'hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="flex-shrink-0">
+                      <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
                     </div>
-                    <div className="space-y-8">
-                      {group.categories.map((category) => (
-                        <div key={category.name} className="bg-white rounded-lg shadow-sm p-6">
-                          <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-medium text-gray-800">{category.name}</h3>
-                            <span className="text-sm text-gray-500">{category.files.length} 個文件</span>
-                          </div>
-                          <div className="overflow-x-auto">
-                            <table className="min-w-full">
-                              <thead>
-                                <tr className="bg-gray-50 border-b">
-                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">文件名稱</th>
-                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">標題</th>
-                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日期</th>
-                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-gray-200">
-                                {category.files.map((file) => (
-                                  <tr key={file.name} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                      {file.name}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                      {file.title}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                      {file.date ? formatDate(file.date) : '無日期'}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                      <DownloadButtons file={file} />
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{file.title}</p>
+                      <p className="text-xs text-gray-500">{file.date}</p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              // 分類文件列表
+              categoryGroups.map((group) => (
+                <div key={group.sector}>
+                  <div className="mb-2">
+                    <h3 className="text-sm font-medium text-gray-500">{group.sector}</h3>
+                  </div>
+                  {group.categories.map((category) => (
+                    <div key={category.name} className="ml-4 mb-4">
+                      <h4 className="text-xs font-medium text-gray-400 mb-2">{category.name}</h4>
+                      {category.files.map((file) => (
+                        <div
+                          key={file.name}
+                          onClick={() => setSelectedFile(file)}
+                          className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                            selectedFile?.name === file.name ? 'bg-blue-50 border border-blue-200' : 'hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <div className="flex-shrink-0">
+                              <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">{file.title}</p>
+                              <p className="text-xs text-gray-500">{file.date}</p>
+                            </div>
                           </div>
                         </div>
                       ))}
                     </div>
-                  </div>
-                );
-              })}
+                  ))}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 右側預覽區 */}
+      <div className="flex-1 bg-white">
+        {selectedFile ? (
+          <div className="h-full flex flex-col">
+            {/* 預覽區頂部 */}
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">{selectedFile.title}</h2>
+                <p className="text-sm text-gray-500">上次更新：{selectedFile.date}</p>
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => window.open(selectedFile.downloadUrl, '_blank')}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                >
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span>下載</span>
+                </button>
+              </div>
             </div>
-          </>
+            {/* 預覽區內容 */}
+            <div className="flex-1 p-4">
+              <iframe
+                src={selectedFile.downloadUrl}
+                className="w-full h-full border-0 rounded-lg"
+                title={selectedFile.title}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="h-full flex items-center justify-center text-gray-400">
+            <div className="text-center">
+              <svg className="h-12 w-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <p>選擇一個文件以預覽</p>
+            </div>
+          </div>
         )}
       </div>
     </div>
