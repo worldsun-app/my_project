@@ -204,20 +204,40 @@ const DashboardPage: React.FC = () => {
                 {group.categories.map((category) => (
                   <div key={category.name} className="mb-6">
                     <h3 className="text-xl font-semibold mb-4">{category.name}</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {category.files.map((file) => (
-                        <div key={file.name} className="bg-white p-4 rounded-lg shadow-md">
-                          <h4 className="font-semibold mb-2">{file.name}</h4>
-                          <p className="text-gray-600 mb-2">{file.title}</p>
-                          <p className="text-gray-600 mb-2">日期: {file.date ? formatDate(file.date) : '無日期'}</p>
-                          <button
-                            onClick={() => handleDownload(file)}
-                            className="text-blue-600 hover:text-blue-800"
-                          >
-                            下載檔案
-                          </button>
-                        </div>
-                      ))}
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full bg-white">
+                        <thead>
+                          <tr className="bg-gray-50 border-b">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">文件名稱</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">標題</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日期</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {category.files.map((file) => (
+                            <tr key={file.name} className="hover:bg-gray-50">
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {file.name}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {file.title}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {file.date ? formatDate(file.date) : '無日期'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                <button
+                                  onClick={() => handleDownload(file)}
+                                  className="text-blue-600 hover:text-blue-900 font-medium"
+                                >
+                                  下載
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 ))}
