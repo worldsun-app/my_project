@@ -27,11 +27,15 @@ const DashboardPage: React.FC = () => {
   useEffect(() => {
     const fetchFiles = async () => {
       try {
+        console.log('開始獲取文件...');
         const filesBySector = await getFilesGroupedBySector();
+        console.log('獲取到的原始數據:', filesBySector);
         const groups: CategoryGroup[] = [];
 
         Object.entries(filesBySector).forEach(([sector, categories]) => {
+          console.log('處理 sector:', sector);
           const categoryList = Object.entries(categories).map(([name, files]) => {
+            console.log('處理 category:', name, '文件數量:', files.length);
             const fileArray = Array.isArray(files) ? files : [];
             return {
               name,
@@ -45,6 +49,7 @@ const DashboardPage: React.FC = () => {
           });
         });
 
+        console.log('處理後的分組數據:', groups);
         setCategoryGroups(groups);
       } catch (error) {
         console.error('獲取文件失敗:', error);
