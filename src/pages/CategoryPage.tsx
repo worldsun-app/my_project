@@ -1,85 +1,89 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getFilesGroupedBySector, type File } from '../services/airtable';
-import { formatDate } from '../utils/dateUtils';
-import { fontStyles } from '../styles/fonts';
+import { useAuth } from '../contexts/AuthContext';
 
-// 預定義的顏色方案
-const colorSchemes = [
-  { bgColor: 'bg-red-50', textColor: 'text-red-700', borderColor: 'border-red-200' },
-  { bgColor: 'bg-orange-50', textColor: 'text-orange-700', borderColor: 'border-orange-200' },
-  { bgColor: 'bg-blue-50', textColor: 'text-blue-700', borderColor: 'border-blue-200' },
-  { bgColor: 'bg-green-50', textColor: 'text-green-700', borderColor: 'border-green-200' },
-  { bgColor: 'bg-purple-50', textColor: 'text-purple-700', borderColor: 'border-purple-200' },
-  { bgColor: 'bg-indigo-50', textColor: 'text-indigo-700', borderColor: 'border-indigo-200' },
-  { bgColor: 'bg-teal-50', textColor: 'text-teal-700', borderColor: 'border-teal-200' },
-  { bgColor: 'bg-pink-50', textColor: 'text-pink-700', borderColor: 'border-pink-200' },
-  { bgColor: 'bg-yellow-50', textColor: 'text-yellow-700', borderColor: 'border-yellow-200' },
-  { bgColor: 'bg-cyan-50', textColor: 'text-cyan-700', borderColor: 'border-cyan-200' }
-];
+type Category = {
+  name: string;
+  files: File[];
+};
+
+type CategoryGroup = {
+  sector: string;
+  categories: Category[];
+};
 
 const CategoryPage: React.FC = () => {
-  const { sector, category } = useParams<{ sector: string; category: string }>();
+  const { categoryName } = useParams<{ categoryName: string }>();
   const navigate = useNavigate();
-  const [files, setFiles] = useState<File[]>([]);
+  const { user, logout } = useAuth();
+  const [categoryGroups, setCategoryGroups] = useState<CategoryGroup[]>([]);
+  const [filteredFiles, setFilteredFiles] = useState<File[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [categoryStyle, setCategoryStyle] = useState<{ bgColor: string; textColor: string; borderColor: string }>({
-    bgColor: 'bg-gray-50',
-    textColor: 'text-gray-700',
-    borderColor: 'border-gray-200'
-  });
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchFiles = async () => {
       try {
+        setError(null);
         const filesBySector = await getFilesGroupedBySector();
-        const sectorData = filesBySector[sector || ''];
-        if (sectorData) {
-          const categoryFiles = sectorData.categories[category || ''] || [];
-          setFiles(categoryFiles);
+        const groups: CategoryGroup[] = [];
 
-          // 設置分類樣式
-          const categoryIndex = Object.keys(sectorData.categories).indexOf(category || '');
-          if (categoryIndex !== -1) {
-            const colorIndex = categoryIndex % colorSchemes.length;
-            setCategoryStyle(colorSchemes[colorIndex]);
-          }
-        } else {
-          setFiles([]);
-        }
-      } catch (err) {
-        setError('無法載入檔案列表');
-        console.error('載入檔案列表失敗:', err);
-      } finally {
+        Object.entries(filesBySector).forEach(([sectorName, sectorData]) => {
+          const categoryList: Category[] = [];
+          Object.entries(sectorData.categories).forEach(([catName, files]) => {
+            categoryList.push({
+              name: catName,
+              files: files
+            });
+          });
+          groups.push({
+            sector: sectorName,
+            categories: categoryList
+          });
+        });
+
+        setCategoryGroups(groups);
+
+        // 篩選當前分類的文件
+        const files = groups.flatMap(group =>
+          group.categories
+            .filter(cat => cat.name === categoryName)
+            .flatMap(cat => cat.files)
+        );
+        setFilteredFiles(files);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('獲取文件失敗:', error);
+        setError(error instanceof Error ? error.message : '獲取文件時發生錯誤');
         setIsLoading(false);
       }
     };
 
     fetchFiles();
-  }, [sector, category]);
+  }, [categoryName]);
 
-  const handleDownload = (url: string, name: string) => {
-    if (!url) {
-      console.error('下載 URL 為空');
-      alert('下載連結無效');
-      return;
+  const handleGoHome = () => {
+    navigate('/');
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('登出失敗:', error);
     }
-    console.log('開始下載:', { name, url });
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = name;
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p>載入中...</p>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>載入中...</p>
+        </div>
       </div>
     );
   }
@@ -87,58 +91,174 @@ const CategoryPage: React.FC = () => {
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          {error}
+        <div className="text-center p-8 bg-red-50 rounded-lg">
+          <h2 className="text-xl font-semibold text-red-700 mb-4">發生錯誤</h2>
+          <p className="text-red-600">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+          >
+            重試
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        <div className={`p-6 ${categoryStyle.bgColor} border-b ${categoryStyle.borderColor}`}>
-          <h1 className={`${fontStyles.title} text-2xl ${categoryStyle.textColor}`}>
-            {sector} - {category}
-          </h1>
-          <p className={`${fontStyles.body} text-gray-600 mt-2`}>
-            共 {files.length} 份報告
-          </p>
-        </div>
-        <div className="divide-y">
-          {files.map((file, index) => (
-            <div
-              key={`${file.name}-${index}`}
-              className="p-6 hover:bg-gray-50 transition-colors duration-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-            >
-              <div className="flex flex-col">
-                <span className={`${fontStyles.subtitle} text-gray-800`}>{file.name}</span>
-                {file.title && (
-                  <span className={`${fontStyles.body} text-sm text-gray-600 mt-1`}>
-                    {file.title}
-                  </span>
-                )}
-                {file.date && (
-                  <span className={`${fontStyles.body} text-sm text-gray-500 mt-2 flex items-center`}>
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    更新日期: {formatDate(file.date)}
-                  </span>
-                )}
+    <div className="flex min-h-screen bg-gray-50">
+      {/* 左側導航欄 */}
+      <div className="w-64 bg-slate-800 flex-shrink-0">
+        <div className="p-4">
+          {/* 平台標題 */}
+          <div className="mb-6">
+            <h1 className="text-xl font-bold text-white">財經資訊平台</h1>
+          </div>
+
+          {/* 用戶登入狀態 */}
+          <div className="mb-6 p-3 bg-slate-700 rounded-lg">
+            <div className="flex items-center space-x-3 mb-3">
+              <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
+                <span className="text-white font-medium">
+                  {user?.email ? user.email[0].toUpperCase() : 'U'}
+                </span>
               </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white truncate">
+                  {user?.displayName || '使用者'}
+                </p>
+                <p className="text-xs text-gray-300 truncate">
+                  {user?.email || '未登入'}
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end">
               <button
-                onClick={() => handleDownload(file.downloadUrl, file.name)}
-                className="inline-flex items-center justify-center bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors duration-200 w-full sm:w-auto"
+                onClick={handleLogout}
+                className="text-sm text-gray-300 hover:text-red-400 transition-colors flex items-center space-x-1"
               >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
-                下載報告
+                <span>登出</span>
               </button>
             </div>
-          ))}
+          </div>
+
+          {/* 返回首頁按鈕 */}
+          <div 
+            onClick={handleGoHome}
+            className="flex items-center space-x-2 text-gray-300 hover:text-blue-400 cursor-pointer mb-6"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            <span className="font-medium">返回首頁</span>
+          </div>
+
+          {/* 快速導覽 */}
+          <h2 className="text-lg font-semibold text-gray-300 mb-4">快速導覽</h2>
+          <div className="space-y-2">
+            {categoryGroups.map((group) => (
+              <div key={group.sector}>
+                <button
+                  onClick={() => navigate(`/sector/${group.sector}`)}
+                  className="w-full text-left px-4 py-2 text-gray-300 hover:bg-slate-700 rounded-lg transition-colors"
+                >
+                  {group.sector}
+                </button>
+                <div className="ml-4 space-y-1">
+                  {group.categories.map((category) => (
+                    <button
+                      key={category.name}
+                      onClick={() => navigate(`/category/${category.name}`)}
+                      className={`w-full text-left px-4 py-1 text-sm ${
+                        category.name === categoryName 
+                          ? 'text-blue-400 bg-slate-700' 
+                          : 'text-gray-400 hover:bg-slate-700'
+                      } rounded-lg transition-colors`}
+                    >
+                      {category.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
+      </div>
+
+      {/* 中間文件列表 */}
+      <div className="w-96 border-r border-gray-200 bg-white">
+        <div className="p-4">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">{categoryName}</h2>
+          <div className="space-y-2">
+            {filteredFiles.map((file) => (
+              <div
+                key={file.name}
+                onClick={() => setSelectedFile(file)}
+                className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                  selectedFile?.name === file.name ? 'bg-blue-50 border border-blue-200' : 'hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0">
+                    <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{file.title}</p>
+                    <p className="text-xs text-gray-500">{file.date}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 右側預覽區 */}
+      <div className="flex-1 bg-white">
+        {selectedFile ? (
+          <div className="h-full flex flex-col">
+            {/* 預覽區頂部 */}
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">{selectedFile.title}</h2>
+                <p className="text-sm text-gray-500">上次更新：{selectedFile.date}</p>
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => window.open(selectedFile.downloadUrl, '_blank')}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                >
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span>下載</span>
+                </button>
+              </div>
+            </div>
+            {/* 預覽區內容 */}
+            <div className="flex-1 p-4">
+              <iframe
+                src={selectedFile.downloadUrl}
+                className="w-full h-full border-0 rounded-lg"
+                title={selectedFile.title}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="h-full flex items-center justify-center text-gray-400">
+            <div className="text-center">
+              <svg className="h-12 w-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <p>選擇一個文件以預覽</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
