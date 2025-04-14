@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { getFilesGroupedBySector, type File } from '../services/airtable';
 
 // 定義類型
@@ -47,6 +47,7 @@ const DashboardPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<File[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const navigate = useNavigate();
 
   // 搜索功能
   const handleSearch = (term: string) => {
@@ -176,6 +177,11 @@ const DashboardPage: React.FC = () => {
     </div>
   );
 
+  // 返回首頁
+  const handleGoHome = () => {
+    navigate('/');
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -209,32 +215,61 @@ const DashboardPage: React.FC = () => {
       {/* 左側導航欄 */}
       <div className="w-64 bg-white shadow-md">
         <div className="p-4">
+          <div 
+            onClick={handleGoHome}
+            className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 cursor-pointer mb-6"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            <span className="font-medium">返回首頁</span>
+          </div>
           <h2 className="text-lg font-semibold text-gray-800 mb-4">快速導覽</h2>
-          <nav className="space-y-2">
+          <div className="space-y-2">
             {categoryGroups.map((group) => (
-              <div key={group.sector} className="mb-4">
-                <h3 className="text-sm font-medium text-gray-500 px-2 py-1">
+              <div key={group.sector}>
+                <button
+                  onClick={() => navigate(`/sector/${group.sector}`)}
+                  className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                >
                   {group.sector}
-                </h3>
-                {group.categories.map((category) => (
-                  <Link
-                    key={category.name}
-                    to={`/category/${group.sector}/${category.name}`}
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
-                  >
-                    {category.name}
-                  </Link>
-                ))}
+                </button>
+                <div className="ml-4 space-y-1">
+                  {group.categories.map((category) => (
+                    <button
+                      key={category.name}
+                      onClick={() => navigate(`/category/${category.name}`)}
+                      className="w-full text-left px-4 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      {category.name}
+                    </button>
+                  ))}
+                </div>
               </div>
             ))}
-          </nav>
+          </div>
         </div>
       </div>
 
       {/* 主內容區 */}
       <div className="flex-1 p-8">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-800 mb-4">財經資訊平台</h1>
+          <div 
+            onClick={handleGoHome}
+            className="flex items-center space-x-2 cursor-pointer group"
+          >
+            <h1 className="text-2xl font-bold text-gray-800 group-hover:text-blue-600 transition-colors">
+              財經資訊平台
+            </h1>
+            <svg 
+              className="h-5 w-5 text-gray-400 group-hover:text-blue-600 transition-colors" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
           
           {/* 搜索框 */}
           <div className="relative">
