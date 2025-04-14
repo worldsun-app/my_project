@@ -44,7 +44,7 @@ type FilesBySector = Record<string, {
 }>;
 
 // 獲取並分類檔案
-export async function getFilesGroupedBySector(): Promise<Record<string, File[]>> {
+export async function getFilesGroupedBySector(): Promise<Record<string, { sector: string; categories: Record<string, File[]> }>> {
   console.log('開始獲取檔案列表...');
   
   try {
@@ -61,7 +61,7 @@ export async function getFilesGroupedBySector(): Promise<Record<string, File[]>>
     const data = await response.json();
     console.log('Airtable 完整響應:', data);
 
-    const filesBySector: Record<string, File[]> = {};
+    const filesBySector: Record<string, { sector: string; categories: Record<string, File[]> }> = {};
 
     if (!data.records || !Array.isArray(data.records)) {
       console.error('無效的響應格式:', data);
@@ -104,9 +104,18 @@ export async function getFilesGroupedBySector(): Promise<Record<string, File[]>>
       };
 
       if (!filesBySector[sector]) {
-        filesBySector[sector] = [];
+        filesBySector[sector] = {
+          sector,
+          categories: {}
+        };
       }
-      filesBySector[sector].push(file);
+
+      const categoryName = category || '未分類';
+      if (!filesBySector[sector].categories[categoryName]) {
+        filesBySector[sector].categories[categoryName] = [];
+      }
+
+      filesBySector[sector].categories[categoryName].push(file);
       console.log(`成功添加文件: ${name} 到 ${sector} 分類`);
     }
 
