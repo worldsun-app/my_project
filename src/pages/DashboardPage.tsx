@@ -129,6 +129,7 @@ const DashboardPage: React.FC = () => {
     });
   };
 
+  // 下載功能
   const handleDownload = (file: File) => {
     if (file.attachment && file.attachment.url) {
       const link = document.createElement('a');
@@ -141,6 +142,39 @@ const DashboardPage: React.FC = () => {
       console.error('No attachment URL found for file:', file.name);
     }
   };
+
+  // 在新分頁開啟
+  const handleOpenInNewTab = (file: File) => {
+    if (file.attachment && file.attachment.url) {
+      window.open(file.attachment.url, '_blank');
+    }
+  };
+
+  // 修改搜索結果表格中的下載按鈕部分
+  const DownloadButtons = ({ file }: { file: File }) => (
+    <div className="flex items-center space-x-2">
+      <button
+        onClick={() => handleDownload(file)}
+        className="text-blue-600 hover:text-blue-900 font-medium flex items-center"
+        title="直接下載"
+      >
+        <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        下載
+      </button>
+      <button
+        onClick={() => handleOpenInNewTab(file)}
+        className="text-gray-600 hover:text-gray-900 font-medium flex items-center"
+        title="在新分頁開啟"
+      >
+        <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+        </svg>
+        開啟
+      </button>
+    </div>
+  );
 
   if (isLoading) {
     return (
@@ -262,12 +296,7 @@ const DashboardPage: React.FC = () => {
                             {file.date ? formatDate(file.date) : '無日期'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <button
-                              onClick={() => handleDownload(file)}
-                              className="text-blue-600 hover:text-blue-900 font-medium"
-                            >
-                              下載
-                            </button>
+                            <DownloadButtons file={file} />
                           </td>
                         </tr>
                       ))}
@@ -325,12 +354,7 @@ const DashboardPage: React.FC = () => {
                             {file.date ? formatDate(file.date) : '無日期'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <button
-                              onClick={() => handleDownload(file)}
-                              className="text-purple-600 hover:text-purple-900 font-medium"
-                            >
-                              下載
-                            </button>
+                            <DownloadButtons file={file} />
                           </td>
                         </tr>
                       ))}
@@ -388,12 +412,7 @@ const DashboardPage: React.FC = () => {
                                       {file.date ? formatDate(file.date) : '無日期'}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                      <button
-                                        onClick={() => handleDownload(file)}
-                                        className={`${colors.text.replace('-800', '-600')} hover:${colors.text.replace('-800', '-900')} font-medium`}
-                                      >
-                                        下載
-                                      </button>
+                                      <DownloadButtons file={file} />
                                     </td>
                                   </tr>
                                 ))}
