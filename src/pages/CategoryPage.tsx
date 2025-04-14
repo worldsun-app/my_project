@@ -189,7 +189,7 @@ const CategoryPage: React.FC = () => {
       </div>
 
       {/* 中間文件列表 */}
-      <div className="w-96 border-r border-gray-200 bg-white">
+      <div className="flex-1 bg-white overflow-y-auto">
         <div className="p-4">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">{categoryName}</h2>
           <div className="space-y-2">
@@ -220,7 +220,7 @@ const CategoryPage: React.FC = () => {
       </div>
 
       {/* 右側預覽區 */}
-      <div className="w-1/2 bg-white">
+      <div className="w-1/3 bg-white ml-auto">
         {selectedFile ? (
           <div className="h-full flex flex-col">
             {/* 預覽區頂部 */}
