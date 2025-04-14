@@ -9,7 +9,7 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 8080
   },
-  base: '/',
+  base: '/download-portal/',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
