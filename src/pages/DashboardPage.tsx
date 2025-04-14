@@ -207,16 +207,15 @@ const DashboardPage: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {category.files.map((file) => (
                         <div key={file.name} className="bg-white p-4 rounded-lg shadow-md">
-                          <h4 className="font-semibold mb-2">{file.title}</h4>
-                          <p className="text-gray-600 mb-2">日期: {file.date}</p>
-                          <a
-                            href={file.downloadUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <h4 className="font-semibold mb-2">{file.name}</h4>
+                          <p className="text-gray-600 mb-2">{file.title}</p>
+                          <p className="text-gray-600 mb-2">日期: {file.date ? formatDate(file.date) : '無日期'}</p>
+                          <button
+                            onClick={() => handleDownload(file)}
                             className="text-blue-600 hover:text-blue-800"
                           >
                             下載檔案
-                          </a>
+                          </button>
                         </div>
                       ))}
                     </div>
