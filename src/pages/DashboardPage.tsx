@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getFilesGroupedBySector, type File } from '../services/airtable';
+import { useAuth } from '../contexts/AuthContext';
 
 // 定義類型
 type Category = {
@@ -41,6 +42,7 @@ const sectorColors: Record<string, { from: string; to: string; border: string; b
 };
 
 const DashboardPage: React.FC = () => {
+  const { user, logout } = useAuth();
   const [categoryGroups, setCategoryGroups] = useState<CategoryGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -183,6 +185,15 @@ const DashboardPage: React.FC = () => {
     navigate('/');
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('登出失敗:', error);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -221,16 +232,33 @@ const DashboardPage: React.FC = () => {
             <h1 className="text-xl font-bold text-gray-800">財經資訊平台</h1>
           </div>
 
-          {/* 登入狀態 */}
+          {/* 用戶登入狀態 */}
           <div className="mb-6 p-3 bg-gray-50 rounded-lg">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3 mb-3">
               <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                <span className="text-blue-600 font-medium">U</span>
+                <span className="text-blue-600 font-medium">
+                  {user?.username ? user.username[0].toUpperCase() : 'U'}
+                </span>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-700">使用者名稱</p>
-                <p className="text-xs text-gray-500">user@example.com</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-700 truncate">
+                  {user?.username || '訪客'}
+                </p>
+                <p className="text-xs text-gray-500 truncate">
+                  {user?.email || '未登入'}
+                </p>
               </div>
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={handleLogout}
+                className="text-sm text-gray-600 hover:text-red-600 transition-colors flex items-center space-x-1"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span>登出</span>
+              </button>
             </div>
           </div>
 
