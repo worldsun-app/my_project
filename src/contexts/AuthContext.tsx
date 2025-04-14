@@ -1,45 +1,42 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-
-interface User {
-  username: string;
-  email: string;
-}
+import { auth } from '../services/auth';
+import { signInWithEmailAndPassword, signOut, onAuthStateChanged, type User } from 'firebase/auth';
 
 interface AuthContextType {
   user: User | null;
-  login: (username: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(() => {
-    const savedUser = localStorage.getItem('user');
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    if (user) {
-      localStorage.setItem('user', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('user');
-    }
-  }, [user]);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+    });
 
-  const login = async (username: string, password: string) => {
-    // 這裡應該調用實際的登入 API
-    // 目前使用模擬數據
-    const mockUser = {
-      username,
-      email: `${username}@example.com`,
-    };
-    setUser(mockUser);
+    return () => unsubscribe();
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      console.error('登入失敗:', error);
+      throw error;
+    }
   };
 
   const logout = async () => {
-    // 這裡應該調用實際的登出 API
-    setUser(null);
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error('登出失敗:', error);
+      throw error;
+    }
   };
 
   return (
