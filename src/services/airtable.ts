@@ -50,6 +50,8 @@ export const getFilesGroupedBySector = async (): Promise<FilesBySector> => {
     const response = await airtableApi.get('', {
       params: {
         view: 'Grid view',
+        // 確保返回所有必要欄位
+        fields: ['name', 'title', 'sector', 'category', 'date', 'attachment']
       },
     });
 
@@ -58,28 +60,40 @@ export const getFilesGroupedBySector = async (): Promise<FilesBySector> => {
     // 將檔案按 sector 和 category 分組
     const filesBySector: FilesBySector = {};
     
+    if (!response.data.records || !Array.isArray(response.data.records)) {
+      console.error('無效的響應數據格式:', response.data);
+      return {};
+    }
+
     response.data.records.forEach((record: any) => {
-      console.log('處理記錄:', record);
-      const category = record.fields.category || '未分類';
-      const sector = record.fields.sector || '其他';
-      
+      const fields = record.fields || {};
+      console.log('處理記錄:', fields);
+
+      // 獲取必要的欄位，使用預設值處理空值情況
+      const name = fields.name || '未命名文件';
+      const title = fields.title || '';
+      const category = fields.category || '未分類';
+      const sector = fields.sector || '其他';
+      const date = fields.date || null;
+      const attachments = fields.attachment || [];
+
       // 檢查是否有附件
-      if (record.fields.attachment && record.fields.attachment.length > 0) {
-        const attachment = record.fields.attachment[0];
+      if (attachments.length > 0) {
+        const attachment = attachments[0];
         const file: File = {
-          name: record.fields.name || attachment.filename,
-          title: record.fields.title,
+          name,
+          title,
           downloadUrl: attachment.url,
-          date: record.fields.date,
-          sector: sector,
-          category: category,
-          attachment: record.fields.attachment
+          date,
+          sector,
+          category,
+          attachment: attachments
         };
 
         // 初始化 sector
         if (!filesBySector[sector]) {
           filesBySector[sector] = {
-            sector: sector,
+            sector,
             categories: {}
           };
         }
@@ -90,10 +104,18 @@ export const getFilesGroupedBySector = async (): Promise<FilesBySector> => {
         }
 
         filesBySector[sector].categories[category].push(file);
+      } else {
+        console.log('跳過沒有附件的記錄:', name);
       }
     });
 
-    console.log('處理後的檔案分類:', filesBySector);
+    // 檢查處理後的數據
+    console.log('處理後的檔案分類:', {
+      sectors: Object.keys(filesBySector),
+      totalFiles: Object.values(filesBySector).reduce((total, sector) => 
+        total + Object.values(sector.categories).reduce((sum, files) => sum + files.length, 0), 0)
+    });
+
     return filesBySector;
   } catch (error) {
     console.error('獲取檔案列表失敗:', error);
@@ -104,7 +126,9 @@ export const getFilesGroupedBySector = async (): Promise<FilesBySector> => {
         data: error.response?.data,
         config: {
           url: error.config?.url,
-          headers: error.config?.headers,
+          method: error.config?.method,
+          baseURL: error.config?.baseURL,
+          params: error.config?.params
         }
       });
     }
