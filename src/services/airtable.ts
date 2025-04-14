@@ -48,16 +48,25 @@ export async function getFilesGroupedBySector(): Promise<Record<string, File[]>>
   console.log('開始獲取檔案列表...');
   
   try {
-    const response = await fetch(`${baseURL}/Files`, {
+    const response = await fetch(baseURL, {
       headers: {
         'Authorization': `Bearer ${AIRTABLE_API_KEY}`
       }
     });
 
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
     const data = await response.json();
     console.log('Airtable 完整響應:', data);
 
     const filesBySector: Record<string, File[]> = {};
+
+    if (!data.records || !Array.isArray(data.records)) {
+      console.error('無效的響應格式:', data);
+      throw new Error('無效的響應格式');
+    }
 
     for (const record of data.records) {
       console.log('完整記錄數據:', record);
