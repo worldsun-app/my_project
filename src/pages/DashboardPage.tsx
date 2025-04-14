@@ -22,6 +22,24 @@ const colorSchemes = [
   { bgColor: 'bg-teal-50', textColor: 'text-teal-700', borderColor: 'border-teal-200' },
 ];
 
+// 定義分類顏色
+const sectorColors: Record<string, { from: string; to: string; border: string; bg: string; text: string }> = {
+  '保險': {
+    from: 'from-blue-50',
+    to: 'to-white',
+    border: 'border-blue-100',
+    bg: 'bg-blue-100',
+    text: 'text-blue-800'
+  },
+  '投資': {
+    from: 'from-emerald-50',
+    to: 'to-white',
+    border: 'border-emerald-100',
+    bg: 'bg-emerald-100',
+    text: 'text-emerald-800'
+  }
+};
+
 const DashboardPage: React.FC = () => {
   const [categoryGroups, setCategoryGroups] = useState<CategoryGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -159,99 +177,122 @@ const DashboardPage: React.FC = () => {
         <h1 className="text-2xl font-bold text-gray-800 mb-8">財經資訊平台</h1>
         
         {/* 最新檔案 */}
-        <div className="mb-12">
-          <h2 className="text-xl font-semibold text-gray-800 mb-6">最新檔案</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {categoryGroups.flatMap(group => 
-              group.categories.flatMap(category => 
-                getLatestFiles(category.files)
-              )
-            ).slice(0, 6).map((file) => (
-              <div
-                key={file.name}
-                className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
-              >
-                <div className="flex flex-col h-full">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-medium text-gray-800 mb-1">
-                      {file.name}
-                    </h3>
-                    <p className="text-sm text-gray-600 mb-2">
-                      {file.title}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {file.date ? formatDate(file.date) : '無日期'}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => handleDownload(file)}
-                    className="mt-4 w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
-                  >
-                    下載
-                  </button>
-                </div>
-              </div>
-            ))}
+        <div className="mb-12 bg-gradient-to-r from-purple-50 to-white p-6 rounded-lg border border-purple-100">
+          <div className="flex items-center mb-8">
+            <h2 className="text-2xl font-bold text-purple-900">最新檔案</h2>
+            <div className="ml-4 px-3 py-1 bg-purple-100 rounded-full text-sm text-purple-800">
+              最近更新
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="bg-gray-50 border-b">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">文件名稱</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">標題</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">分類</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日期</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {categoryGroups.flatMap(group => 
+                    group.categories.flatMap(category => 
+                      getLatestFiles(category.files)
+                    )
+                  ).slice(0, 6).map((file) => (
+                    <tr key={file.name} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {file.name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {file.title}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {file.sector} / {file.category}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {file.date ? formatDate(file.date) : '無日期'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <button
+                          onClick={() => handleDownload(file)}
+                          className="text-purple-600 hover:text-purple-900 font-medium"
+                        >
+                          下載
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
         {/* 分類內容 */}
         <div className="space-y-12">
-          {categoryGroups.map((group) => (
-            <div key={group.sector} className="bg-gradient-to-r from-blue-50 to-white p-6 rounded-lg border border-blue-100">
-              <div className="flex items-center mb-8">
-                <h2 className="text-2xl font-bold text-blue-900">{group.sector}</h2>
-                <div className="ml-4 px-3 py-1 bg-blue-100 rounded-full text-sm text-blue-800">
-                  {group.categories.reduce((total, category) => total + category.files.length, 0)} 個文件
+          {categoryGroups.map((group) => {
+            const colors = sectorColors[group.sector] || sectorColors['保險'];
+            return (
+              <div key={group.sector} className={`bg-gradient-to-r ${colors.from} ${colors.to} p-6 rounded-lg border ${colors.border}`}>
+                <div className="flex items-center mb-8">
+                  <h2 className={`text-2xl font-bold ${colors.text.replace('text-', 'text-').replace('-800', '-900')}`}>
+                    {group.sector}
+                  </h2>
+                  <div className={`ml-4 px-3 py-1 ${colors.bg} rounded-full text-sm ${colors.text}`}>
+                    {group.categories.reduce((total, category) => total + category.files.length, 0)} 個文件
+                  </div>
+                </div>
+                <div className="space-y-8">
+                  {group.categories.map((category) => (
+                    <div key={category.name} className="bg-white rounded-lg shadow-sm p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-medium text-gray-800">{category.name}</h3>
+                        <span className="text-sm text-gray-500">{category.files.length} 個文件</span>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full">
+                          <thead>
+                            <tr className="bg-gray-50 border-b">
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">文件名稱</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">標題</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日期</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            {category.files.map((file) => (
+                              <tr key={file.name} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                  {file.name}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  {file.title}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  {file.date ? formatDate(file.date) : '無日期'}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                  <button
+                                    onClick={() => handleDownload(file)}
+                                    className={`${colors.text.replace('-800', '-600')} hover:${colors.text.replace('-800', '-900')} font-medium`}
+                                  >
+                                    下載
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div className="space-y-8">
-                {group.categories.map((category) => (
-                  <div key={category.name} className="bg-white rounded-lg shadow-sm p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-medium text-gray-800">{category.name}</h3>
-                      <span className="text-sm text-gray-500">{category.files.length} 個文件</span>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full">
-                        <thead>
-                          <tr className="bg-gray-50 border-b">
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">文件名稱</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">標題</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日期</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                          {category.files.map((file) => (
-                            <tr key={file.name} className="hover:bg-gray-50">
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                {file.name}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {file.title}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {file.date ? formatDate(file.date) : '無日期'}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                <button
-                                  onClick={() => handleDownload(file)}
-                                  className="text-blue-600 hover:text-blue-900 font-medium"
-                                >
-                                  下載
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
