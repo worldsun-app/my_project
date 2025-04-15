@@ -106,9 +106,9 @@ const CategoryPage: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="h-screen flex">
       {/* 左側導航欄 */}
-      <div className="w-64 bg-slate-800 flex-shrink-0 overflow-y-auto">
+      <div className="w-64 bg-slate-800 overflow-y-auto">
         <div className="p-4">
           {/* 平台標題 */}
           <div className="mb-6">
@@ -189,9 +189,9 @@ const CategoryPage: React.FC = () => {
       </div>
 
       {/* 主要內容區域 */}
-      <div className="flex-1 flex min-w-0">
+      <div className="flex-1 flex">
         {/* 中間文件列表 */}
-        <div className="w-[350px] flex-shrink-0 bg-white overflow-y-auto border-r border-gray-200">
+        <div style={{ width: '300px' }} className="flex-shrink-0 bg-white overflow-y-auto border-r border-gray-200">
           <div className="p-4">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">{categoryName}</h2>
             <div className="space-y-2">
@@ -221,11 +221,11 @@ const CategoryPage: React.FC = () => {
           </div>
         </div>
         {/* 右側預覽區 */}
-        <div className="flex-1 min-w-0 bg-white flex flex-col">
+        <div className="flex-1 flex flex-col">
           {selectedFile ? (
             <>
               {/* 預覽區頂部 */}
-              <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+              <div className="flex-shrink-0 p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">{selectedFile.name}</h2>
                   <p className="text-sm text-gray-600">{selectedFile.title}</p>
@@ -247,8 +247,9 @@ const CategoryPage: React.FC = () => {
               <div className="flex-1 relative">
                 <iframe
                   src={selectedFile.downloadUrl}
-                  className="absolute inset-0 w-full h-full border-0"
+                  className="absolute inset-0 w-full h-full"
                   title={selectedFile.title}
+                  style={{ minHeight: '100%' }}
                 />
               </div>
             </>
