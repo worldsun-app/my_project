@@ -15,13 +15,17 @@ const ProtectedRoute: React.FC<{ element: React.ReactElement; requireAdmin?: boo
 }) => {
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (!user) {
+    const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
+      setUser(currentUser);
+      
+      if (!currentUser) {
         setAuthorized(false);
       } else if (requireAdmin) {
-        setAuthorized(isAdmin(user));
+        const adminStatus = await isAdmin(currentUser);
+        setAuthorized(adminStatus);
       } else {
         setAuthorized(true);
       }
@@ -32,10 +36,21 @@ const ProtectedRoute: React.FC<{ element: React.ReactElement; requireAdmin?: boo
   }, [requireAdmin]);
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">載入中...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>載入中...</p>
+        </div>
+      </div>
+    );
   }
 
-  return authorized ? element : <Navigate to={authorized ? '/' : '/login'} replace />;
+  if (!authorized) {
+    return <Navigate to={user ? '/' : '/login'} replace />;
+  }
+
+  return element;
 };
 
 function App() {
