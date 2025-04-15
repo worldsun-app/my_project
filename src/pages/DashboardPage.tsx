@@ -104,7 +104,11 @@ const DashboardPage: React.FC = () => {
   useEffect(() => {
     const fetchFiles = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/files`);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/files`, {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
         if (!response.ok) {
           throw new Error('Failed to fetch files');
         }
