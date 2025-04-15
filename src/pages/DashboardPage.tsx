@@ -104,49 +104,25 @@ const DashboardPage: React.FC = () => {
   useEffect(() => {
     const fetchFiles = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/files`, {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-        if (!response.ok) {
-          throw new Error('Failed to fetch files');
-        }
-        const data = await response.json();
-        console.log('獲取到的原始數據:', data);
+        const filesBySector = await getFilesGroupedBySector();
+        console.log('獲取到的原始數據:', filesBySector);
 
-        // 處理數據分組
-        const groupedData = data.reduce((acc: Record<string, Record<string, FileData[]>>, file: FileData) => {
-          // 跳過不完整的記錄
-          if (!file.sector || !file.category || !file.name) {
-            console.warn('跳過不完整記錄:', file.name || '未命名文件', file);
-            return acc;
-          }
-
-          const sector = file.sector;
-          const category = file.category;
-
-          console.log('處理 sector:', sector);
-          console.log('處理 category:', category, '文件數量:', file.files?.length || 0);
-
-          if (!acc[sector]) {
-            acc[sector] = {};
-          }
-          if (!acc[sector][category]) {
-            acc[sector][category] = [];
-          }
-          acc[sector][category].push(file);
-          return acc;
-        }, {});
-
-        console.log('處理後的分組數據:', groupedData);
-        
         // 轉換為 CategoryGroup[] 類型
-        const categoryGroups: CategoryGroup[] = Object.entries(groupedData).map(([sector, categories]) => ({
-          sector,
-          categories: Object.entries(categories as Record<string, FileData[]>).map(([category, files]) => ({
+        const categoryGroups: CategoryGroup[] = Object.entries(filesBySector).map(([sector, data]) => ({
+          sector: data.sector,
+          categories: Object.entries(data.categories).map(([category, files]) => ({
             name: category,
-            files
+            files: files.map(file => ({
+              id: file.name,
+              name: file.name,
+              title: file.title,
+              sector: file.sector,
+              category: file.category,
+              date: file.date,
+              files: [{
+                url: file.downloadUrl
+              }]
+            }))
           }))
         }));
 
