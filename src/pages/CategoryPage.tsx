@@ -106,9 +106,9 @@ const CategoryPage: React.FC = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex h-screen overflow-hidden">
       {/* 左側導航欄 */}
-      <div className="w-64 bg-slate-800 flex-shrink-0">
+      <div className="w-64 bg-slate-800 flex-shrink-0 overflow-y-auto">
         <div className="p-4">
           {/* 平台標題 */}
           <div className="mb-6">
@@ -189,9 +189,9 @@ const CategoryPage: React.FC = () => {
       </div>
 
       {/* 主要內容區域 */}
-      <div className="flex-1 flex">
+      <div className="flex-1 flex min-w-0">
         {/* 中間文件列表 */}
-        <div className="w-[400px] bg-white overflow-y-auto border-r border-gray-200">
+        <div className="w-[350px] flex-shrink-0 bg-white overflow-y-auto border-r border-gray-200">
           <div className="p-4">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">{categoryName}</h2>
             <div className="space-y-2">
@@ -221,7 +221,7 @@ const CategoryPage: React.FC = () => {
           </div>
         </div>
         {/* 右側預覽區 */}
-        <div className="flex-1 bg-white overflow-y-auto">
+        <div className="flex-1 min-w-0 bg-white overflow-y-auto">
           {selectedFile ? (
             <div className="h-full flex flex-col">
               {/* 預覽區頂部 */}
