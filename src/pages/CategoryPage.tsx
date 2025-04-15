@@ -222,7 +222,7 @@ const CategoryPage: React.FC = () => {
         </div>
 
         {/* 右側預覽區 */}
-        <div className="flex-1 flex flex-col min-w-0 bg-white">
+        <div className="flex-1 flex flex-col min-w-0 bg-white max-w-[calc(100%-280px-256px)]">
           {selectedFile ? (
             <>
               {/* 預覽區頂部 */}
@@ -245,11 +245,12 @@ const CategoryPage: React.FC = () => {
                 </div>
               </div>
               {/* 預覽區內容 */}
-              <div className="flex-1 relative">
+              <div className="flex-1 relative overflow-hidden">
                 <iframe
                   src={selectedFile.downloadUrl}
                   className="absolute inset-0 w-full h-full border-0"
                   title={selectedFile.title}
+                  style={{ maxWidth: '100%' }}
                 />
               </div>
             </>
