@@ -302,9 +302,9 @@ const DashboardPage: React.FC = () => {
       </div>
 
       {/* 主要內容區域 */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="grid grid-cols-12 flex-1">
         {/* 中間文件列表 */}
-        <div className="w-[30%] flex-shrink-0 bg-white overflow-y-auto border-r border-gray-200">
+        <div className="col-span-4 bg-white overflow-y-auto border-r border-gray-200">
           <div className="p-4">
             {/* 搜索框 */}
             <div className="mb-4">
@@ -391,7 +391,7 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
         {/* 右側預覽區 */}
-        <div className="w-[70%] flex-shrink-0 bg-white overflow-y-auto">
+        <div className="col-span-8 bg-white overflow-y-auto">
           {selectedFile ? (
             <div className="h-full flex flex-col">
               {/* 預覽區頂部 */}
