@@ -14,7 +14,7 @@ const firebaseConfig = {
 // 管理員 email 列表
 const ADMIN_EMAILS = [
   'service@wsgfo.com',
-  'denniwu@wsgfo.com'
+  'denniswu@wsgfo.com'
 ];
 
 // 初始化 Firebase
