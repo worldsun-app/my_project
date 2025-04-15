@@ -62,11 +62,17 @@ const StatsPage: React.FC = () => {
   // 檢查管理員權限
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (!isAdmin(user)) {
-        navigate('/');
-      } else {
-        fetchData();
+      if (!user) {
+        navigate('/login');
+        return;
       }
+      
+      if (!isAdmin(user)) {
+        navigate('/', { replace: true });
+        return;
+      }
+
+      fetchData();
       setLoading(false);
     });
 
