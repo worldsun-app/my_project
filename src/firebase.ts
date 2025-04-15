@@ -1,4 +1,4 @@
-import { initializeApp, getApps } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 
@@ -17,8 +17,15 @@ const ADMIN_EMAILS = [
   'denniwu@wsgfo.com'
 ];
 
-// 只在沒有初始化過的情況下初始化
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+// 初始化 Firebase
+let app;
+try {
+  app = getApp();
+} catch {
+  app = initializeApp(firebaseConfig);
+}
+
+// 初始化服務
 export const auth = getAuth(app);
 export const functions = getFunctions(app);
 
