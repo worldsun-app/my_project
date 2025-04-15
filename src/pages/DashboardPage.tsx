@@ -302,7 +302,7 @@ const DashboardPage: React.FC = () => {
       </div>
 
       {/* 中間文件列表 */}
-      <div className="flex-1 bg-white overflow-y-auto">
+      <div className="w-1/2 bg-white overflow-y-auto">
         <div className="p-4">
           {/* 搜索框 */}
           <div className="mb-4">
