@@ -301,136 +301,138 @@ const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 中間文件列表 */}
-      <div className="w-1/3 bg-white overflow-y-auto">
-        <div className="p-4">
-          {/* 搜索框 */}
-          <div className="mb-4">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="搜索文件名稱或標題..."
-                value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <div className="absolute right-3 top-2.5 text-gray-400">
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+      {/* 主要內容區域 */}
+      <div className="flex flex-1">
+        {/* 中間文件列表 */}
+        <div className="w-1/3 bg-white overflow-y-auto border-r border-gray-200">
+          <div className="p-4">
+            {/* 搜索框 */}
+            <div className="mb-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="搜索文件名稱或標題..."
+                  value={searchTerm}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <div className="absolute right-3 top-2.5 text-gray-400">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* 文件列表 */}
-          <div className="space-y-2">
-            {isSearching ? (
-              // 搜索結果列表
-              searchResults.map((file) => (
-                <div
-                  key={file.name}
-                  onClick={() => setSelectedFile(file)}
-                  className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                    selectedFile?.name === file.name ? 'bg-blue-50 border border-blue-200' : 'hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="flex-shrink-0">
-                      <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-gray-900 truncate">{file.name}</p>
-                      <p className="text-xs text-gray-600 truncate mb-1">{file.title}</p>
-                      <p className="text-xs text-gray-400">{file.date}</p>
+            {/* 文件列表 */}
+            <div className="space-y-2">
+              {isSearching ? (
+                // 搜索結果列表
+                searchResults.map((file) => (
+                  <div
+                    key={file.name}
+                    onClick={() => setSelectedFile(file)}
+                    className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                      selectedFile?.name === file.name ? 'bg-blue-50 border border-blue-200' : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-shrink-0">
+                        <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-gray-900 truncate">{file.name}</p>
+                        <p className="text-xs text-gray-600 truncate mb-1">{file.title}</p>
+                        <p className="text-xs text-gray-400">{file.date}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
-            ) : (
-              // 分類文件列表
-              categoryGroups.map((group) => (
-                <div key={group.sector}>
-                  <div className="mb-2">
-                    <h3 className="text-sm font-medium text-gray-500">{group.sector}</h3>
-                  </div>
-                  {group.categories.map((category) => (
-                    <div key={category.name} className="ml-4 mb-4">
-                      <h4 className="text-xs font-medium text-gray-400 mb-2">{category.name}</h4>
-                      {category.files.map((file) => (
-                        <div
-                          key={file.name}
-                          onClick={() => setSelectedFile(file)}
-                          className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                            selectedFile?.name === file.name ? 'bg-blue-50 border border-blue-200' : 'hover:bg-gray-50'
-                          }`}
-                        >
-                          <div className="flex items-center space-x-3">
-                            <div className="flex-shrink-0">
-                              <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-bold text-gray-900 truncate">{file.name}</p>
-                              <p className="text-xs text-gray-600 truncate mb-1">{file.title}</p>
-                              <p className="text-xs text-gray-400">{file.date}</p>
+                ))
+              ) : (
+                // 分類文件列表
+                categoryGroups.map((group) => (
+                  <div key={group.sector}>
+                    <div className="mb-2">
+                      <h3 className="text-sm font-medium text-gray-500">{group.sector}</h3>
+                    </div>
+                    {group.categories.map((category) => (
+                      <div key={category.name} className="ml-4 mb-4">
+                        <h4 className="text-xs font-medium text-gray-400 mb-2">{category.name}</h4>
+                        {category.files.map((file) => (
+                          <div
+                            key={file.name}
+                            onClick={() => setSelectedFile(file)}
+                            className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                              selectedFile?.name === file.name ? 'bg-blue-50 border border-blue-200' : 'hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="flex items-center space-x-3">
+                              <div className="flex-shrink-0">
+                                <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-bold text-gray-900 truncate">{file.name}</p>
+                                <p className="text-xs text-gray-600 truncate mb-1">{file.title}</p>
+                                <p className="text-xs text-gray-400">{file.date}</p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              ))
-            )}
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* 右側預覽區 */}
-      <div className="w-2/3 bg-white ml-auto">
-        {selectedFile ? (
-          <div className="h-full flex flex-col">
-            {/* 預覽區頂部 */}
-            <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">{selectedFile.name}</h2>
-                <p className="text-sm text-gray-600">{selectedFile.title}</p>
-                <p className="text-sm text-gray-500">上次更新：{selectedFile.date}</p>
+        {/* 右側預覽區 */}
+        <div className="w-2/3 bg-white">
+          {selectedFile ? (
+            <div className="h-full flex flex-col">
+              {/* 預覽區頂部 */}
+              <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">{selectedFile.name}</h2>
+                  <p className="text-sm text-gray-600">{selectedFile.title}</p>
+                  <p className="text-sm text-gray-500">上次更新：{selectedFile.date}</p>
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => window.open(selectedFile.downloadUrl, '_blank')}
+                    className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center space-x-2 shadow-md hover:shadow-lg"
+                  >
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span>下載文件</span>
+                  </button>
+                </div>
               </div>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => window.open(selectedFile.downloadUrl, '_blank')}
-                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center space-x-2 shadow-md hover:shadow-lg"
-                >
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  <span>下載文件</span>
-                </button>
+              {/* 預覽區內容 */}
+              <div className="flex-1 p-4">
+                <iframe
+                  src={selectedFile.downloadUrl}
+                  className="w-full h-full border-0 rounded-lg"
+                  title={selectedFile.title}
+                />
               </div>
             </div>
-            {/* 預覽區內容 */}
-            <div className="flex-1 p-4">
-              <iframe
-                src={selectedFile.downloadUrl}
-                className="w-full h-full border-0 rounded-lg"
-                title={selectedFile.title}
-              />
+          ) : (
+            <div className="h-full flex items-center justify-center text-gray-400">
+              <div className="text-center">
+                <svg className="h-12 w-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p>選擇一個文件以預覽</p>
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="h-full flex items-center justify-center text-gray-400">
-            <div className="text-center">
-              <svg className="h-12 w-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <p>選擇一個文件以預覽</p>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
