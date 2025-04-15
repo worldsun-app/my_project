@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { analyticsService } from '../services/analyticsService';
+import { isAdmin } from '../firebase';
 
 const AdminStatsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [isAdminUser, setIsAdminUser] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [stats, setStats] = useState<any>(null);
 
@@ -17,13 +17,13 @@ const AdminStatsPage: React.FC = () => {
         return;
       }
 
-      const adminStatus = await analyticsService.isAdmin();
+      const adminStatus = await isAdmin(user);
       if (!adminStatus) {
         navigate('/');
         return;
       }
 
-      setIsAdmin(true);
+      setIsAdminUser(true);
       setIsLoading(false);
     };
 
@@ -41,7 +41,7 @@ const AdminStatsPage: React.FC = () => {
     );
   }
 
-  if (!isAdmin) {
+  if (!isAdminUser) {
     return null;
   }
 

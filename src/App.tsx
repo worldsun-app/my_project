@@ -5,7 +5,7 @@ import { onAuthStateChanged, type User } from 'firebase/auth';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import CategoryPage from './pages/CategoryPage';
-import StatsPage from './pages/StatsPage';
+import AdminStatsPage from './pages/AdminStatsPage';
 import { AuthProvider } from './contexts/AuthContext';
 
 // 受保護的路由組件
@@ -66,7 +66,7 @@ function App() {
           <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/" replace />} />
           <Route path="/" element={<ProtectedRoute element={<DashboardPage />} />} />
           <Route path="/category/:categoryName" element={<ProtectedRoute element={<CategoryPage />} />} />
-          <Route path="/admin/stats" element={<ProtectedRoute element={<StatsPage />} requireAdmin={true} />} />
+          <Route path="/admin/stats" element={<ProtectedRoute element={<AdminStatsPage />} requireAdmin={true} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>

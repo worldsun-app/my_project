@@ -50,7 +50,20 @@ export const onAuthStateChange = (callback: (user: User | null) => void) => {
 };
 
 // 檢查用戶是否為管理員
-export const isAdmin = (user: User | null): boolean => {
+export const isAdmin = async (user: User | null): Promise<boolean> => {
   if (!user) return false;
-  return ADMIN_EMAILS.includes(user.email || '');
+  
+  try {
+    // 首先檢查 email 列表
+    if (ADMIN_EMAILS.includes(user.email || '')) {
+      return true;
+    }
+    
+    // 然後檢查 Firebase 自定義聲明
+    const decodedToken = await user.getIdTokenResult();
+    return decodedToken.claims.admin === true;
+  } catch (error) {
+    console.error('檢查管理員狀態時出錯:', error);
+    return false;
+  }
 }; 
