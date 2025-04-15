@@ -37,15 +37,6 @@ export class AnalyticsService {
         return;
       }
 
-      // 驗證必要字段
-      const requiredFields = ['action', 'userId', 'userName', 'timestamp'];
-      const missingFields = requiredFields.filter(field => !metadata[field]);
-      
-      if (missingFields.length > 0) {
-        console.warn(`Missing required fields for activity log: ${missingFields.join(', ')}`);
-        return;
-      }
-
       // 準備活動記錄數據
       const activityData = {
         userId: user.uid,

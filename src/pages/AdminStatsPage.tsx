@@ -7,23 +7,23 @@ import {
   PieChart, Pie, Cell
 } from 'recharts';
 
-interface DailyStat {
+interface DailyStats {
   date: string;
   visitCount: number;
 }
 
-interface FileStat {
+interface FileStats {
   fileId: string;
   fileName: string;
   viewCount: number;
 }
 
-interface DeviceStat {
+interface DeviceStats {
   deviceType: string;
   count: number;
 }
 
-interface BrowserStat {
+interface BrowserStats {
   browser: string;
   count: number;
 }
@@ -31,49 +31,71 @@ interface BrowserStat {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
 const AdminStatsPage: React.FC = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [dailyStats, setDailyStats] = useState<DailyStat[]>([]);
-  const [fileStats, setFileStats] = useState<FileStat[]>([]);
-  const [deviceStats, setDeviceStats] = useState<DeviceStat[]>([]);
-  const [browserStats, setBrowserStats] = useState<BrowserStat[]>([]);
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [dailyStats, setDailyStats] = useState<DailyStats[]>([]);
+  const [fileStats, setFileStats] = useState<FileStats[]>([]);
+  const [deviceStats, setDeviceStats] = useState<DeviceStats[]>([]);
+  const [browserStats, setBrowserStats] = useState<BrowserStats[]>([]);
 
   useEffect(() => {
-    const checkAdmin = async () => {
-      if (user) {
-        const adminStatus = await analyticsService.isAdmin(user.email || '');
-        setIsAdmin(adminStatus);
-        if (!adminStatus) {
-          navigate('/');
-        } else {
-          // 获取统计数据
-          const stats = await analyticsService.getDailyStats();
-          setDailyStats(stats);
-          
-          const fileStats = await analyticsService.getFileStats();
-          setFileStats(fileStats);
-          
-          const deviceStats = await analyticsService.getDeviceStats();
-          setDeviceStats(deviceStats);
-          
-          const browserStats = await analyticsService.getBrowserStats();
-          setBrowserStats(browserStats);
-        }
-      } else {
-        navigate('/login');
+    const checkAdminStatus = async () => {
+      if (!user?.email) {
+        navigate('/');
+        return;
       }
-      setLoading(false);
+
+      try {
+        const isUserAdmin = await analyticsService.isAdmin(user.email);
+        if (!isUserAdmin) {
+          navigate('/');
+          return;
+        }
+
+        setIsAdmin(true);
+        await loadStats();
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        navigate('/');
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    checkAdmin();
+    checkAdminStatus();
   }, [user, navigate]);
 
-  if (loading) {
+  const loadStats = async () => {
+    try {
+      // 獲取過去 7 天的數據
+      const endDate = new Date().toISOString().split('T')[0];
+      const startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      
+      const [dailyData, fileData, deviceData, browserData] = await Promise.all([
+        analyticsService.getDailyStats(startDate, endDate),
+        analyticsService.getFileStats(),
+        analyticsService.getDeviceStats(),
+        analyticsService.getBrowserStats()
+      ]);
+
+      setDailyStats(dailyData);
+      setFileStats(fileData as FileStats[]);
+      setDeviceStats(deviceData);
+      setBrowserStats(browserData);
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  };
+
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>載入中...</p>
+        </div>
       </div>
     );
   }
@@ -83,95 +105,131 @@ const AdminStatsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="min-h-screen bg-gray-100 py-8 px-4">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">管理統計</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">管理員統計</h1>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* 每日訪問統計 */}
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-lg font-semibold mb-4">每日訪問統計</h2>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={dailyStats}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="visitCount" fill="#8884d8" name="訪問次數" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+        {/* 每日訪問統計 */}
+        <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <h2 className="text-xl font-semibold mb-4">每日訪問統計</h2>
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead>
+                <tr>
+                  <th className="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                    日期
+                  </th>
+                  <th className="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                    訪問次數
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {dailyStats.map((stat) => (
+                  <tr key={stat.date}>
+                    <td className="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
+                      {stat.date}
+                    </td>
+                    <td className="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
+                      {stat.visitCount}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
+        </div>
 
-          {/* 熱門文件 */}
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-lg font-semibold mb-4">熱門文件</h2>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={fileStats.slice(0, 5)} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" />
-                  <YAxis dataKey="fileName" type="category" width={150} />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="viewCount" fill="#82ca9d" name="查看次數" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+        {/* 熱門文件統計 */}
+        <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <h2 className="text-xl font-semibold mb-4">熱門文件統計</h2>
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead>
+                <tr>
+                  <th className="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                    文件名稱
+                  </th>
+                  <th className="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                    瀏覽次數
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {fileStats.map((stat) => (
+                  <tr key={stat.fileId}>
+                    <td className="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
+                      {stat.fileName}
+                    </td>
+                    <td className="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
+                      {stat.viewCount}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
+        </div>
 
-          {/* 設備分佈 */}
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-lg font-semibold mb-4">設備分佈</h2>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={deviceStats}
-                    dataKey="count"
-                    nameKey="deviceType"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    label
-                  >
-                    {deviceStats.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+        {/* 裝置統計 */}
+        <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <h2 className="text-xl font-semibold mb-4">裝置統計</h2>
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead>
+                <tr>
+                  <th className="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                    裝置類型
+                  </th>
+                  <th className="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                    使用次數
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {deviceStats.map((stat) => (
+                  <tr key={stat.deviceType}>
+                    <td className="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
+                      {stat.deviceType}
+                    </td>
+                    <td className="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
+                      {stat.count}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
+        </div>
 
-          {/* 瀏覽器分佈 */}
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-lg font-semibold mb-4">瀏覽器分佈</h2>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={browserStats}
-                    dataKey="count"
-                    nameKey="browser"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    label
-                  >
-                    {browserStats.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+        {/* 瀏覽器統計 */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold mb-4">瀏覽器統計</h2>
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead>
+                <tr>
+                  <th className="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                    瀏覽器
+                  </th>
+                  <th className="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                    使用次數
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {browserStats.map((stat) => (
+                  <tr key={stat.browser}>
+                    <td className="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
+                      {stat.browser}
+                    </td>
+                    <td className="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
+                      {stat.count}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
