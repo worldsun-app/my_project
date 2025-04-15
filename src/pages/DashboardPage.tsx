@@ -3,8 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { getFilesGroupedBySector, type File } from '../services/airtable';
 import { useAuth } from '../contexts/AuthContext';
 import { analyticsService } from '../services/analyticsService';
-import { auth } from '../firebase';
-import { useAuthState } from 'react-firebase-hooks/auth';
 
 // 定義類型
 type Category = {

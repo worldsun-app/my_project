@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getFilesGroupedBySector, type File } from '../services/airtable';
+import { File, getFilesGroupedBySector, getCategories, getSubcategories } from '../services/airtable';
 import { useAuth } from '../contexts/AuthContext';
 import { analyticsService } from '../services/analyticsService';
-import { auth } from '../firebase';
-import { useAuthState } from 'react-firebase-hooks/auth';
 
 type Category = {
   name: string;
@@ -283,12 +281,17 @@ const CategoryPage: React.FC = () => {
               </div>
               {/* 預覽區內容 */}
               <div className="flex-1 relative overflow-hidden">
-                <iframe
-                  src={`${selectedFile.downloadUrl}#zoom=45&view=bookmarks`}
-                  className="absolute inset-0 w-full h-full border-0"
-                  title={selectedFile.title}
-                  style={{ maxWidth: '100%' }}
-                />
+                <div className="p-4">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">{selectedFile.fields['文件名稱']}</h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    最後更新: {new Date(selectedFile.fields['最後更新時間']).toLocaleDateString()}
+                  </p>
+                  <iframe
+                    src={selectedFile.fields['文件連結']}
+                    className="w-full h-[calc(100vh-200px)] border-0"
+                    title={selectedFile.fields['文件名稱']}
+                  />
+                </div>
               </div>
             </>
           ) : (
