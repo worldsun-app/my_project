@@ -29,48 +29,58 @@ export class AnalyticsService {
     }
   }
 
-  async logActivity(data: {
-    actionType: string;
-    fileId?: string;
-    fileName?: string;
-    category?: string;
-    duration?: number;
-    deviceType?: string;
-    browser?: string;
-    screenSize?: string;
-  }) {
+  async logActivity(action: string, metadata: any = {}) {
     try {
-      const currentUser = auth.currentUser;
-      if (!currentUser) {
-        console.warn('No user logged in, skipping activity logging');
+      const user = auth.currentUser;
+      if (!user) {
+        console.warn('No user logged in, skipping activity log');
         return;
       }
 
-      await this.base('Activity_Logs').create([
-        {
-          fields: {
-            userId: currentUser.email || '',
-            userName: currentUser.displayName || '',
-            timestamp: new Date().toISOString(),
-            actionType: data.actionType,
-            fileId: data.fileId || '',
-            fileName: data.fileName || '',
-            category: data.category || '',
-            deviceType: data.deviceType || this.getDeviceType(),
-            browser: data.browser || navigator.userAgent,
-            screenSize: data.screenSize || `${window.innerWidth}x${window.innerHeight}`,
-            duration: data.duration || 0
-          }
-        }
-      ]);
-
-      if (data.actionType === 'file_open' && data.fileId) {
-        await this.updateFileStats(data.fileId);
+      // 驗證必要字段
+      const requiredFields = ['action', 'userId', 'userName', 'timestamp'];
+      const missingFields = requiredFields.filter(field => !metadata[field]);
+      
+      if (missingFields.length > 0) {
+        console.warn(`Missing required fields for activity log: ${missingFields.join(', ')}`);
+        return;
       }
 
+      // 準備活動記錄數據
+      const activityData = {
+        userId: user.uid,
+        userName: user.displayName || user.email || 'Unknown User',
+        timestamp: new Date().toISOString(),
+        action,
+        ...metadata,
+        deviceType: this.getDeviceType(),
+        browser: this.getBrowser(),
+        screenSize: `${window.innerWidth}x${window.innerHeight}`
+      };
+
+      console.log('Logging activity with data:', activityData);
+
+      // 創建活動記錄
+      const record = await this.base('Activity_Logs').create(activityData);
+      console.log('Activity logged successfully:', record);
+
+      // 如果是文件操作，更新文件統計
+      if (action === 'file_open' && metadata.fileId) {
+        await this.updateFileStats(metadata.fileId);
+      }
+
+      // 更新每日統計
       await this.updateDailyStats();
+
     } catch (error) {
       console.error('Failed to log activity:', error);
+      if (error instanceof Error) {
+        console.error('Error details:', {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        });
+      }
     }
   }
 
@@ -247,6 +257,10 @@ export class AnalyticsService {
       return 'mobile';
     }
     return 'desktop';
+  }
+
+  private getBrowser(): string {
+    return navigator.userAgent;
   }
 }
 

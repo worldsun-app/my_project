@@ -5,15 +5,25 @@ import { useAuth } from '../contexts/AuthContext';
 import { analyticsService } from '../services/analyticsService';
 
 // 定義類型
-type Category = {
+interface FileData {
+  id: string;
   name: string;
-  files: File[];
-};
+  sector: string;
+  category: string;
+  files?: any[];
+  title?: string;
+  date?: string;
+}
 
-type CategoryGroup = {
+interface Category {
+  name: string;
+  files: FileData[];
+}
+
+interface CategoryGroup {
   sector: string;
   categories: Category[];
-};
+}
 
 // 預定義的顏色方案
 const colorSchemes = [
@@ -48,9 +58,9 @@ const DashboardPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults, setSearchResults] = useState<File[]>([]);
+  const [searchResults, setSearchResults] = useState<FileData[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFile, setSelectedFile] = useState<FileData | null>(null);
   const navigate = useNavigate();
   const [viewStartTime, setViewStartTime] = useState<number>(0);
 
@@ -69,7 +79,7 @@ const DashboardPage: React.FC = () => {
       group.categories.flatMap(category =>
         category.files.filter(file =>
           file.name.toLowerCase().includes(searchTermLower) ||
-          file.title.toLowerCase().includes(searchTermLower)
+          file.title?.toLowerCase().includes(searchTermLower)
         )
       )
     );
@@ -77,37 +87,69 @@ const DashboardPage: React.FC = () => {
   };
 
   useEffect(() => {
+    const startTime = Date.now();
+    setViewStartTime(startTime);
+
+    return () => {
+      const duration = Date.now() - startTime;
+      if (user) {
+        analyticsService.logActivity('page_exit', {
+          category: 'dashboard',
+          duration
+        });
+      }
+    };
+  }, [user]);
+
+  useEffect(() => {
     const fetchFiles = async () => {
       try {
-        setError(null);
-        console.log('開始獲取文件...');
-        const filesBySector = await getFilesGroupedBySector();
-        console.log('獲取到的原始數據:', filesBySector);
-        const groups: CategoryGroup[] = [];
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/files`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch files');
+        }
+        const data = await response.json();
+        console.log('獲取到的原始數據:', data);
 
-        Object.entries(filesBySector).forEach(([sectorName, sectorData]) => {
-          console.log('處理 sector:', sectorName);
-          const categoryList: Category[] = [];
+        // 處理數據分組
+        const groupedData = data.reduce((acc: Record<string, Record<string, FileData[]>>, file: FileData) => {
+          // 跳過不完整的記錄
+          if (!file.sector || !file.category || !file.name) {
+            console.warn('跳過不完整記錄:', file.name || '未命名文件', file);
+            return acc;
+          }
 
-          Object.entries(sectorData.categories).forEach(([categoryName, files]) => {
-            console.log('處理 category:', categoryName, '文件數量:', files.length);
-            categoryList.push({
-              name: categoryName,
-              files: files
-            });
-          });
+          const sector = file.sector;
+          const category = file.category;
 
-          groups.push({
-            sector: sectorName,
-            categories: categoryList
-          });
-        });
+          console.log('處理 sector:', sector);
+          console.log('處理 category:', category, '文件數量:', file.files?.length || 0);
 
-        console.log('處理後的分組數據:', groups);
-        setCategoryGroups(groups);
+          if (!acc[sector]) {
+            acc[sector] = {};
+          }
+          if (!acc[sector][category]) {
+            acc[sector][category] = [];
+          }
+          acc[sector][category].push(file);
+          return acc;
+        }, {});
+
+        console.log('處理後的分組數據:', groupedData);
+        
+        // 轉換為 CategoryGroup[] 類型
+        const categoryGroups: CategoryGroup[] = Object.entries(groupedData).map(([sector, categories]) => ({
+          sector,
+          categories: Object.entries(categories as Record<string, FileData[]>).map(([category, files]) => ({
+            name: category,
+            files
+          }))
+        }));
+
+        setCategoryGroups(categoryGroups);
       } catch (error) {
-        console.error('獲取文件失敗:', error);
-        setError(error instanceof Error ? error.message : '獲取文件時發生錯誤');
+        console.error('Error fetching files:', error);
+        setError('獲取文件列表失敗');
       } finally {
         setIsLoading(false);
       }
@@ -116,26 +158,7 @@ const DashboardPage: React.FC = () => {
     fetchFiles();
   }, []);
 
-  useEffect(() => {
-    if (!user) return;
-
-    setViewStartTime(Date.now());
-    analyticsService.logActivity({
-      actionType: 'page_view',
-      category: 'dashboard'
-    });
-
-    return () => {
-      const duration = Math.floor((Date.now() - viewStartTime) / 1000);
-      analyticsService.logActivity({
-        actionType: 'page_leave',
-        category: 'dashboard',
-        duration
-      });
-    };
-  }, [user]);
-
-  const getLatestFiles = (files: File[]) => {
+  const getLatestFiles = (files: FileData[]) => {
     return files
       .sort((a, b) => {
         const dateA = a.date ? new Date(a.date).getTime() : 0;
@@ -155,10 +178,10 @@ const DashboardPage: React.FC = () => {
   };
 
   // 下載功能
-  const handleDownload = (file: File) => {
-    if (file.attachment && file.attachment.url) {
+  const handleDownload = (file: FileData) => {
+    if (file.files && file.files.length > 0 && file.files[0].url) {
       const link = document.createElement('a');
-      link.href = file.attachment.url;
+      link.href = file.files[0].url;
       link.download = file.name;
       document.body.appendChild(link);
       link.click();
@@ -169,26 +192,30 @@ const DashboardPage: React.FC = () => {
   };
 
   // 在新分頁開啟
-  const handleOpenInNewTab = (file: File) => {
-    if (file.attachment && file.attachment.url) {
-      window.open(file.attachment.url, '_blank');
+  const handleOpenInNewTab = (file: FileData) => {
+    if (file.files && file.files.length > 0 && file.files[0].url) {
+      window.open(file.files[0].url, '_blank');
     }
   };
 
-  const handleFileOpen = async (file: any) => {
-    if (!user) return;
+  const handleFileClick = async (file: FileData) => {
+    try {
+      // 記錄文件打開活動
+      await analyticsService.logActivity('file_open', {
+        fileId: file.id,
+        fileName: file.name,
+        category: file.category
+      });
 
-    await analyticsService.logActivity({
-      actionType: 'file_open',
-      fileId: file.id,
-      fileName: file.name,
-      category: file.category
-    });
-    window.open(file.downloadUrl, '_blank');
+      // 在新視窗中打開文件
+      window.open(file.files?.[0]?.url, '_blank');
+    } catch (error) {
+      console.error('Error opening file:', error);
+    }
   };
 
   // 修改搜索結果表格中的下載按鈕部分
-  const DownloadButtons = ({ file }: { file: File }) => (
+  const DownloadButtons = ({ file }: { file: FileData }) => (
     <div className="flex items-center space-x-2">
       <button
         onClick={() => handleDownload(file)}
@@ -438,7 +465,7 @@ const DashboardPage: React.FC = () => {
                   </div>
                   <div>
                     <button
-                      onClick={() => handleFileOpen(selectedFile)}
+                      onClick={() => handleFileClick(selectedFile)}
                       className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center space-x-2 shadow-md hover:shadow-lg"
                     >
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -452,7 +479,7 @@ const DashboardPage: React.FC = () => {
               {/* 預覽區內容 */}
               <div className="flex-1 relative overflow-hidden">
                 <iframe
-                  src={`${selectedFile.downloadUrl}#zoom=45&view=bookmarks`}
+                  src={`${selectedFile.files?.[0]?.url}#zoom=45&view=bookmarks`}
                   className="absolute inset-0 w-full h-full border-0"
                   title={selectedFile.title}
                   style={{ maxWidth: '100%' }}
