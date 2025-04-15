@@ -26,7 +26,6 @@ const CategoryPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewStartTime, setViewStartTime] = useState<number>(0);
-  const [userAuth] = useAuthState(auth);
 
   useEffect(() => {
     const fetchFiles = async () => {
@@ -70,7 +69,7 @@ const CategoryPage: React.FC = () => {
   }, [categoryName]);
 
   useEffect(() => {
-    if (!userAuth) return;
+    if (!user) return;
 
     setViewStartTime(Date.now());
     analyticsService.logActivity({
@@ -86,7 +85,7 @@ const CategoryPage: React.FC = () => {
         duration
       });
     };
-  }, [categoryName, userAuth]);
+  }, [categoryName, user]);
 
   const handleGoHome = () => {
     navigate('/');
@@ -102,7 +101,7 @@ const CategoryPage: React.FC = () => {
   };
 
   const handleFileOpen = async (file: File) => {
-    if (!userAuth) return;
+    if (!user) return;
 
     await analyticsService.logActivity({
       actionType: 'file_open',
@@ -156,15 +155,15 @@ const CategoryPage: React.FC = () => {
             <div className="flex items-center space-x-3 mb-3">
               <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
                 <span className="text-white font-medium">
-                  {userAuth?.email ? userAuth.email[0].toUpperCase() : 'U'}
+                  {user?.email ? user.email[0].toUpperCase() : 'U'}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white truncate">
-                  {userAuth?.displayName || '使用者'}
+                  {user?.displayName || '使用者'}
                 </p>
                 <p className="text-xs text-gray-300 truncate">
-                  {userAuth?.email || '未登入'}
+                  {user?.email || '未登入'}
                 </p>
               </div>
             </div>

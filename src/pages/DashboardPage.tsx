@@ -55,7 +55,6 @@ const DashboardPage: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const navigate = useNavigate();
   const [viewStartTime, setViewStartTime] = useState<number>(0);
-  const [user] = useAuthState(auth);
 
   // 搜索功能
   const handleSearch = (term: string) => {
