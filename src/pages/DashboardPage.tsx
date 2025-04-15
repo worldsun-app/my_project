@@ -392,7 +392,7 @@ const DashboardPage: React.FC = () => {
         </div>
 
         {/* 右側預覽區 */}
-        <div className="flex-1 flex flex-col min-w-0 bg-white max-w-[calc(100%-280px-256px)]">
+        <div className="flex-1 flex flex-col min-w-0 bg-white max-w-[800px]">
           {selectedFile ? (
             <>
               {/* 預覽區頂部 */}
