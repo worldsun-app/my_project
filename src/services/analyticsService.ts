@@ -1,6 +1,11 @@
 import Airtable from 'airtable';
 import { auth } from '../firebase';
 
+interface AirtableRecord {
+  fields: Record<string, any>;
+  get: (field: string) => any;
+}
+
 export class AnalyticsService {
   private base: any;
 
@@ -11,13 +16,10 @@ export class AnalyticsService {
     this.base = Airtable.base(import.meta.env.VITE_AIRTABLE_BASE_ID);
   }
 
-  async isAdmin(): Promise<boolean> {
+  async isAdmin(email: string): Promise<boolean> {
     try {
-      const currentUser = auth.currentUser;
-      if (!currentUser) return false;
-
       const records = await this.base('Admin_Users').select({
-        filterByFormula: `{email} = '${currentUser.email}'`
+        filterByFormula: `{email} = '${email}'`
       }).firstPage();
 
       return records && records.length > 0;
@@ -139,40 +141,101 @@ export class AnalyticsService {
     }
   }
 
-  async getFileStats(fileId: string) {
+  async getFileStats(fileId?: string): Promise<Array<{ fileId: string; fileName: string; viewCount: number }> | { viewCount: number; lastViewedAt: string; firstViewedAt: string } | null> {
     try {
-      const records = await this.base('File_Stats').select({
-        filterByFormula: `{fileId} = '${fileId}'`
-      }).firstPage();
+      if (fileId) {
+        const records = await this.base('File_Stats').select({
+          filterByFormula: `{fileId} = '${fileId}'`
+        }).firstPage();
 
-      if (records && records.length > 0) {
-        return {
-          viewCount: records[0].fields.viewCount || 0,
-          lastViewedAt: records[0].fields.lastViewedAt,
-          firstViewedAt: records[0].fields.firstViewedAt
-        };
+        if (records && records.length > 0) {
+          return {
+            viewCount: records[0].fields.viewCount || 0,
+            lastViewedAt: records[0].fields.lastViewedAt,
+            firstViewedAt: records[0].fields.firstViewedAt
+          };
+        }
+        return null;
+      } else {
+        const records = await this.base('File_Stats').select({
+          sort: [{ field: 'viewCount', direction: 'desc' }],
+          maxRecords: 10
+        }).all();
+
+        return records.map((record: AirtableRecord) => ({
+          fileId: record.get('fileId') as string,
+          fileName: record.get('fileName') as string,
+          viewCount: record.get('viewCount') as number
+        }));
       }
-      return null;
     } catch (error) {
       console.error('Failed to get file stats:', error);
-      return null;
+      return fileId ? null : [];
     }
   }
 
-  async getDailyStats(startDate: string, endDate: string) {
+  async getDailyStats(startDate?: string, endDate?: string): Promise<Array<{ date: string; visitCount: number }>> {
     try {
-      const records = await this.base('Daily_Stats').select({
-        filterByFormula: `AND({date} >= '${startDate}', {date} <= '${endDate}')`
-      }).firstPage();
+      if (startDate && endDate) {
+        const records = await this.base('Daily_Stats').select({
+          filterByFormula: `AND({date} >= '${startDate}', {date} <= '${endDate}')`
+        }).firstPage();
 
-      return records.map(record => ({
-        date: record.fields.date,
-        visitCount: record.fields.visitCount || 0
-      }));
+        return records.map((record: AirtableRecord) => ({
+          date: record.fields.date,
+          visitCount: record.fields.visitCount || 0
+        }));
+      } else {
+        const records = await this.base('Daily_Stats').select({
+          sort: [{ field: 'date', direction: 'desc' }],
+          maxRecords: 30
+        }).all();
+
+        return records.map((record: AirtableRecord) => ({
+          date: record.get('date') as string,
+          visitCount: record.get('visitCount') as number
+        }));
+      }
     } catch (error) {
       console.error('Failed to get daily stats:', error);
       return [];
     }
+  }
+
+  async getDeviceStats(): Promise<Array<{ deviceType: string; count: number }>> {
+    const records = await this.base('Activity_Logs').select({
+      groupBy: [{ field: 'deviceType' }],
+      fields: ['deviceType']
+    }).all();
+
+    const deviceCounts = new Map<string, number>();
+    records.forEach((record: AirtableRecord) => {
+      const deviceType = record.get('deviceType') as string;
+      deviceCounts.set(deviceType, (deviceCounts.get(deviceType) || 0) + 1);
+    });
+
+    return Array.from(deviceCounts.entries()).map(([deviceType, count]) => ({
+      deviceType,
+      count
+    }));
+  }
+
+  async getBrowserStats(): Promise<Array<{ browser: string; count: number }>> {
+    const records = await this.base('Activity_Logs').select({
+      groupBy: [{ field: 'browser' }],
+      fields: ['browser']
+    }).all();
+
+    const browserCounts = new Map<string, number>();
+    records.forEach((record: AirtableRecord) => {
+      const browser = record.get('browser') as string;
+      browserCounts.set(browser, (browserCounts.get(browser) || 0) + 1);
+    });
+
+    return Array.from(browserCounts.entries()).map(([browser, count]) => ({
+      browser,
+      count
+    }));
   }
 
   private getDeviceType(): string {

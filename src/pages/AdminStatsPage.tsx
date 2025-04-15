@@ -1,227 +1,176 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { isAdmin } from '../firebase';
-import { Bar, Line } from 'react-chartjs-2';
+import { analyticsService } from '../services/analyticsService';
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  PointElement,
-} from 'chart.js';
-import { format } from 'date-fns';
-import { zhTW } from 'date-fns/locale';
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  PieChart, Pie, Cell
+} from 'recharts';
 
-// 註冊 ChartJS 組件
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  PointElement
-);
-
-interface Stats {
-  activityLogs: Array<{
-    id: string;
-    userId: string;
-    userName: string;
-    timestamp: string;
-    action: string;
-    fileId?: string;
-    fileName?: string;
-  }>;
-  fileStats: Array<{
-    fileId: string;
-    fileName: string;
-    viewCount: number;
-  }>;
-  dailyStats: Array<{
-    date: string;
-    visitCount: number;
-  }>;
-  totalUsers: number;
-  activeUsers: number;
-  monthlyDownloads: number;
+interface DailyStat {
+  date: string;
+  visitCount: number;
 }
+
+interface FileStat {
+  fileId: string;
+  fileName: string;
+  viewCount: number;
+}
+
+interface DeviceStat {
+  deviceType: string;
+  count: number;
+}
+
+interface BrowserStat {
+  browser: string;
+  count: number;
+}
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
 const AdminStatsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [isAdminUser, setIsAdminUser] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [dailyStats, setDailyStats] = useState<DailyStat[]>([]);
+  const [fileStats, setFileStats] = useState<FileStat[]>([]);
+  const [deviceStats, setDeviceStats] = useState<DeviceStat[]>([]);
+  const [browserStats, setBrowserStats] = useState<BrowserStat[]>([]);
 
   useEffect(() => {
     const checkAdmin = async () => {
-      if (!user) {
+      if (user) {
+        const adminStatus = await analyticsService.isAdmin(user.email || '');
+        setIsAdmin(adminStatus);
+        if (!adminStatus) {
+          navigate('/');
+        } else {
+          // 获取统计数据
+          const stats = await analyticsService.getDailyStats();
+          setDailyStats(stats);
+          
+          const fileStats = await analyticsService.getFileStats();
+          setFileStats(fileStats);
+          
+          const deviceStats = await analyticsService.getDeviceStats();
+          setDeviceStats(deviceStats);
+          
+          const browserStats = await analyticsService.getBrowserStats();
+          setBrowserStats(browserStats);
+        }
+      } else {
         navigate('/login');
-        return;
       }
-
-      const adminStatus = await isAdmin(user);
-      if (!adminStatus) {
-        navigate('/');
-        return;
-      }
-
-      setIsAdminUser(true);
-      fetchStats();
+      setLoading(false);
     };
 
     checkAdmin();
   }, [user, navigate]);
 
-  const fetchStats = async () => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/stats`, {
-        headers: {
-          'Authorization': `Bearer ${await user?.getIdToken()}`
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch stats');
-      }
-      
-      const data = await response.json();
-      setStats(data);
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-      setError(error instanceof Error ? error.message : '獲取統計數據時發生錯誤');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p>載入中...</p>
-        </div>
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
-  if (!isAdminUser) {
+  if (!isAdmin) {
     return null;
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center text-red-600">
-          <p>{error}</p>
-          <button 
-            onClick={() => fetchStats()} 
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            重試
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!stats) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center text-gray-600">
-          <p>無可用數據</p>
-        </div>
-      </div>
-    );
-  }
-
-  const dailyVisits = {
-    labels: stats.dailyStats.map(stat => format(new Date(stat.date), 'MM/dd', { locale: zhTW })),
-    datasets: [
-      {
-        label: '每日訪問量',
-        data: stats.dailyStats.map(stat => stat.visitCount),
-        backgroundColor: 'rgba(54, 162, 235, 0.5)',
-        borderColor: 'rgb(54, 162, 235)',
-        borderWidth: 1,
-      },
-    ],
-  };
-
-  const fileDownloads = {
-    labels: stats.fileStats.map(stat => stat.fileName),
-    datasets: [
-      {
-        label: '檔案瀏覽次數',
-        data: stats.fileStats.map(stat => stat.viewCount),
-        backgroundColor: 'rgba(75, 192, 192, 0.5)',
-        borderColor: 'rgb(75, 192, 192)',
-        borderWidth: 1,
-      },
-    ],
-  };
-
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
+    <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-8">管理員統計</h1>
+        <h1 className="text-2xl font-bold mb-6">管理統計</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* 每日訪問量 */}
+          {/* 每日訪問統計 */}
           <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-lg font-semibold mb-4">每日訪問量</h2>
-            <Line data={dailyVisits} />
-          </div>
-
-          {/* 最受歡迎文件 */}
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-lg font-semibold mb-4">最受歡迎文件</h2>
-            <Bar data={fileDownloads} />
-          </div>
-
-          {/* 用戶數據摘要 */}
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-lg font-semibold mb-4">用戶數據摘要</h2>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded">
-                <div className="text-2xl font-bold text-blue-600">{stats.totalUsers}</div>
-                <div className="text-gray-600">總用戶數</div>
-              </div>
-              <div className="text-center p-4 bg-green-50 rounded">
-                <div className="text-2xl font-bold text-green-600">{stats.activeUsers}</div>
-                <div className="text-gray-600">本週活躍用戶</div>
-              </div>
-              <div className="text-center p-4 bg-purple-50 rounded">
-                <div className="text-2xl font-bold text-purple-600">{stats.monthlyDownloads}</div>
-                <div className="text-gray-600">本月下載次數</div>
-              </div>
+            <h2 className="text-lg font-semibold mb-4">每日訪問統計</h2>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={dailyStats}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="visitCount" fill="#8884d8" name="訪問次數" />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
 
-          {/* 最近活動日誌 */}
+          {/* 熱門文件 */}
           <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-lg font-semibold mb-4">最近活動日誌</h2>
-            <div className="space-y-2">
-              {stats.activityLogs.map((log) => (
-                <div key={log.id} className="p-2 hover:bg-gray-50 rounded">
-                  <div className="text-sm text-gray-600">
-                    {format(new Date(log.timestamp), 'yyyy-MM-dd HH:mm')}
-                  </div>
-                  <div>
-                    用戶 {log.userName} {log.action}
-                    {log.fileName && ` "${log.fileName}"`}
-                  </div>
-                </div>
-              ))}
+            <h2 className="text-lg font-semibold mb-4">熱門文件</h2>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={fileStats.slice(0, 5)} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" />
+                  <YAxis dataKey="fileName" type="category" width={150} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="viewCount" fill="#82ca9d" name="查看次數" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* 設備分佈 */}
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h2 className="text-lg font-semibold mb-4">設備分佈</h2>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={deviceStats}
+                    dataKey="count"
+                    nameKey="deviceType"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    label
+                  >
+                    {deviceStats.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* 瀏覽器分佈 */}
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h2 className="text-lg font-semibold mb-4">瀏覽器分佈</h2>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={browserStats}
+                    dataKey="count"
+                    nameKey="browser"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    label
+                  >
+                    {browserStats.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </div>
