@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getFilesGroupedBySector, type File } from '../services/airtable';
 import { useAuth } from '../contexts/AuthContext';
+import { analyticsService } from '../services/analyticsService';
+import { auth } from '../firebase';
+import { useAuthState } from 'react-firebase-hooks/auth';
 
 // 定義類型
 type Category = {
@@ -51,6 +54,8 @@ const DashboardPage: React.FC = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const navigate = useNavigate();
+  const [viewStartTime, setViewStartTime] = useState<number>(0);
+  const [user] = useAuthState(auth);
 
   // 搜索功能
   const handleSearch = (term: string) => {
@@ -114,6 +119,25 @@ const DashboardPage: React.FC = () => {
     fetchFiles();
   }, []);
 
+  useEffect(() => {
+    if (!user) return;
+
+    setViewStartTime(Date.now());
+    analyticsService.logActivity({
+      actionType: 'page_view',
+      category: 'dashboard'
+    });
+
+    return () => {
+      const duration = Math.floor((Date.now() - viewStartTime) / 1000);
+      analyticsService.logActivity({
+        actionType: 'page_leave',
+        category: 'dashboard',
+        duration
+      });
+    };
+  }, [user]);
+
   const getLatestFiles = (files: File[]) => {
     return files
       .sort((a, b) => {
@@ -152,6 +176,18 @@ const DashboardPage: React.FC = () => {
     if (file.attachment && file.attachment.url) {
       window.open(file.attachment.url, '_blank');
     }
+  };
+
+  const handleFileOpen = async (file: any) => {
+    if (!user) return;
+
+    await analyticsService.logActivity({
+      actionType: 'file_open',
+      fileId: file.id,
+      fileName: file.name,
+      category: file.category
+    });
+    window.open(file.downloadUrl, '_blank');
   };
 
   // 修改搜索結果表格中的下載按鈕部分
@@ -405,7 +441,7 @@ const DashboardPage: React.FC = () => {
                   </div>
                   <div>
                     <button
-                      onClick={() => window.open(selectedFile.downloadUrl, '_blank')}
+                      onClick={() => handleFileOpen(selectedFile)}
                       className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center space-x-2 shadow-md hover:shadow-lg"
                     >
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

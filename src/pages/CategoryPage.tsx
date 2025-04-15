@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getFilesGroupedBySector, type File } from '../services/airtable';
 import { useAuth } from '../contexts/AuthContext';
+import { analyticsService } from '../services/analyticsService';
+import { auth } from '../firebase';
+import { useAuthState } from 'react-firebase-hooks/auth';
 
 type Category = {
   name: string;
@@ -22,6 +25,8 @@ const CategoryPage: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewStartTime, setViewStartTime] = useState<number>(0);
+  const [userAuth] = useAuthState(auth);
 
   useEffect(() => {
     const fetchFiles = async () => {
@@ -64,6 +69,25 @@ const CategoryPage: React.FC = () => {
     fetchFiles();
   }, [categoryName]);
 
+  useEffect(() => {
+    if (!userAuth) return;
+
+    setViewStartTime(Date.now());
+    analyticsService.logActivity({
+      actionType: 'category_view',
+      category: categoryName
+    });
+
+    return () => {
+      const duration = Math.floor((Date.now() - viewStartTime) / 1000);
+      analyticsService.logActivity({
+        actionType: 'page_leave',
+        category: categoryName,
+        duration
+      });
+    };
+  }, [categoryName, userAuth]);
+
   const handleGoHome = () => {
     navigate('/');
   };
@@ -75,6 +99,18 @@ const CategoryPage: React.FC = () => {
     } catch (error) {
       console.error('登出失敗:', error);
     }
+  };
+
+  const handleFileOpen = async (file: File) => {
+    if (!userAuth) return;
+
+    await analyticsService.logActivity({
+      actionType: 'file_open',
+      fileId: file.id,
+      fileName: file.name,
+      category: categoryName
+    });
+    window.open(file.downloadUrl, '_blank');
   };
 
   if (isLoading) {
@@ -120,15 +156,15 @@ const CategoryPage: React.FC = () => {
             <div className="flex items-center space-x-3 mb-3">
               <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
                 <span className="text-white font-medium">
-                  {user?.email ? user.email[0].toUpperCase() : 'U'}
+                  {userAuth?.email ? userAuth.email[0].toUpperCase() : 'U'}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white truncate">
-                  {user?.displayName || '使用者'}
+                  {userAuth?.displayName || '使用者'}
                 </p>
                 <p className="text-xs text-gray-300 truncate">
-                  {user?.email || '未登入'}
+                  {userAuth?.email || '未登入'}
                 </p>
               </div>
             </div>
@@ -235,7 +271,7 @@ const CategoryPage: React.FC = () => {
                   </div>
                   <div>
                     <button
-                      onClick={() => window.open(selectedFile.downloadUrl, '_blank')}
+                      onClick={() => handleFileOpen(selectedFile)}
                       className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center space-x-2 shadow-md hover:shadow-lg"
                     >
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
