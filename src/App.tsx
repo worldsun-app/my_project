@@ -5,6 +5,7 @@ import { onAuthStateChanged, type User } from 'firebase/auth';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import CategoryPage from './pages/CategoryPage';
+import StatsPage from './pages/StatsPage';
 import { AuthProvider } from './contexts/AuthContext';
 
 function App() {
@@ -35,6 +36,7 @@ function App() {
           <Routes>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/category/:categoryName" element={<CategoryPage />} />
+            <Route path="/admin/stats" element={<StatsPage />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         ) : (
