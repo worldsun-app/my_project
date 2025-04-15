@@ -24,8 +24,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html')
-      },
-      external: ['recharts']
+      }
     }
   },
   resolve: {
@@ -34,6 +33,6 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom', 'chart.js', 'react-chartjs-2', 'date-fns']
+    include: ['react', 'react-dom', 'react-router-dom', 'chart.js', 'react-chartjs-2', 'date-fns', 'recharts']
   }
 })
