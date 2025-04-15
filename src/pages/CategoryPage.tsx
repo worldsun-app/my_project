@@ -191,40 +191,38 @@ const CategoryPage: React.FC = () => {
       {/* 主要內容區域 */}
       <div className="flex-1 flex min-w-0">
         {/* 中間文件列表 */}
-        <div className="w-[200px] flex-shrink-0 bg-white border-r border-gray-200 overflow-y-auto">
-          <div className="h-full overflow-y-auto">
-            <div className="p-4">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">{categoryName}</h2>
-              <div className="space-y-2">
-                {filteredFiles.map((file) => (
-                  <div
-                    key={file.name}
-                    onClick={() => setSelectedFile(file)}
-                    className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                      selectedFile?.name === file.name ? 'bg-blue-50 border border-blue-200' : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="flex-shrink-0">
-                        <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-gray-900 truncate">{file.name}</p>
-                        <p className="text-xs text-gray-600 truncate mb-1">{file.title}</p>
-                        <p className="text-xs text-gray-400">{file.date}</p>
-                      </div>
+        <div className="w-[180px] flex-shrink-0 bg-white border-r border-gray-200">
+          <div className="p-4">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">{categoryName}</h2>
+            <div className="space-y-2">
+              {filteredFiles.map((file) => (
+                <div
+                  key={file.name}
+                  onClick={() => setSelectedFile(file)}
+                  className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                    selectedFile?.name === file.name ? 'bg-blue-50 border border-blue-200' : 'hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="flex-shrink-0">
+                      <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-gray-900 truncate">{file.name}</p>
+                      <p className="text-xs text-gray-600 truncate mb-1">{file.title}</p>
+                      <p className="text-xs text-gray-400">{file.date}</p>
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
         {/* 右側預覽區 */}
-        <div className="flex-1 flex flex-col min-w-0 bg-white">
+        <div className="flex-grow flex flex-col min-w-0 bg-white">
           {selectedFile ? (
             <>
               {/* 預覽區頂部 */}
