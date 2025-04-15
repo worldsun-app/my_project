@@ -1,25 +1,14 @@
-import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
   signInWithEmailAndPassword,
   User
 } from 'firebase/auth';
-
-// Firebase 配置
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID
-};
-
-// 初始化 Firebase
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+import { auth as firebaseAuth } from '../firebase';
 
 // 登入函數
 export const login = async (email: string, password: string): Promise<void> => {
   try {
-    await signInWithEmailAndPassword(auth, email, password);
+    await signInWithEmailAndPassword(firebaseAuth, email, password);
   } catch (error) {
     console.error('Login error:', error);
     throw error;
@@ -33,16 +22,16 @@ export type { User };
 export const authService = {
   // 登入方法
   login: async (email: string, password: string) => {
-    // 待實現
+    return login(email, password);
   },
   
   // 登出方法
   logout: async () => {
-    // 待實現
+    return firebaseAuth.signOut();
   },
   
   // 獲取當前用戶
   getCurrentUser: () => {
-    // 待實現
+    return firebaseAuth.currentUser;
   }
 }; 
