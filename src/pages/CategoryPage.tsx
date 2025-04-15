@@ -222,7 +222,7 @@ const CategoryPage: React.FC = () => {
         </div>
 
         {/* 右側預覽區 */}
-        <div className="flex-grow flex flex-col min-w-0 bg-white">
+        <div className="w-1/2 flex flex-col min-w-0 bg-white">
           {selectedFile ? (
             <>
               {/* 預覽區頂部 */}
