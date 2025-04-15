@@ -221,9 +221,9 @@ const CategoryPage: React.FC = () => {
           </div>
         </div>
         {/* 右側預覽區 */}
-        <div className="flex-1 min-w-0 bg-white overflow-y-auto">
+        <div className="flex-1 min-w-0 bg-white flex flex-col">
           {selectedFile ? (
-            <div className="h-full flex flex-col">
+            <>
               {/* 預覽區頂部 */}
               <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
                 <div>
@@ -244,16 +244,16 @@ const CategoryPage: React.FC = () => {
                 </div>
               </div>
               {/* 預覽區內容 */}
-              <div className="flex-1 p-4">
+              <div className="flex-1 relative">
                 <iframe
                   src={selectedFile.downloadUrl}
-                  className="w-full h-full border-0 rounded-lg"
+                  className="absolute inset-0 w-full h-full border-0"
                   title={selectedFile.title}
                 />
               </div>
-            </div>
+            </>
           ) : (
-            <div className="h-full flex items-center justify-center text-gray-400">
+            <div className="flex-1 flex items-center justify-center text-gray-400">
               <div className="text-center">
                 <svg className="h-12 w-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
