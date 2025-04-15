@@ -249,7 +249,7 @@ const CategoryPage: React.FC = () => {
               {/* 預覽區內容 */}
               <div className="flex-1 relative overflow-hidden">
                 <iframe
-                  src={`${selectedFile.downloadUrl}#zoom=40&view=bookmarks`}
+                  src={`${selectedFile.downloadUrl}#zoom=45&view=bookmarks`}
                   className="absolute inset-0 w-full h-full border-0"
                   title={selectedFile.title}
                   style={{ maxWidth: '100%' }}
