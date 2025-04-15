@@ -19,14 +19,19 @@ const ProtectedRoute: React.FC<{ element: React.ReactElement; requireAdmin?: boo
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
+      console.log('ProtectedRoute - 用戶狀態變更:', currentUser?.email);
       setUser(currentUser);
       
       if (!currentUser) {
+        console.log('ProtectedRoute - 用戶未登錄');
         setAuthorized(false);
       } else if (requireAdmin) {
+        console.log('ProtectedRoute - 檢查管理員權限');
         const adminStatus = await isAdmin(currentUser);
+        console.log('ProtectedRoute - 管理員權限檢查結果:', adminStatus);
         setAuthorized(adminStatus);
       } else {
+        console.log('ProtectedRoute - 普通用戶授權');
         setAuthorized(true);
       }
       setLoading(false);
@@ -36,6 +41,7 @@ const ProtectedRoute: React.FC<{ element: React.ReactElement; requireAdmin?: boo
   }, [requireAdmin]);
 
   if (loading) {
+    console.log('ProtectedRoute - 載入中...');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -47,9 +53,11 @@ const ProtectedRoute: React.FC<{ element: React.ReactElement; requireAdmin?: boo
   }
 
   if (!authorized) {
+    console.log('ProtectedRoute - 未授權，重定向到:', user ? '首頁' : '登錄頁');
     return <Navigate to={user ? '/' : '/login'} replace />;
   }
 
+  console.log('ProtectedRoute - 已授權，渲染組件');
   return element;
 };
 
