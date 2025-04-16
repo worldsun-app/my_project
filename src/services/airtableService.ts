@@ -234,10 +234,18 @@ export class AirtableService {
   private formatDateTime(dateStr: string | undefined | null): string {
     if (!dateStr) return '無記錄';
     try {
-      const date = new Date(dateStr);
-      if (isNaN(date.getTime())) return '無效日期';
+      console.log('格式化日期時間:', {
+        input: dateStr,
+        type: typeof dateStr
+      });
       
-      return date.toLocaleString('zh-TW', {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) {
+        console.warn('無效的日期時間:', dateStr);
+        return '無效日期';
+      }
+      
+      const formatted = date.toLocaleString('zh-TW', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
@@ -246,10 +254,29 @@ export class AirtableService {
         hour12: false,
         timeZone: 'Asia/Taipei'
       });
+      
+      console.log('格式化結果:', formatted);
+      return formatted;
     } catch (error) {
       console.error('日期格式化失敗:', error);
       return '無效日期';
     }
+  }
+
+  // 檢查是否為有效的日期時間字符串
+  private isValidDateString(value: any): boolean {
+    if (typeof value !== 'string') return false;
+    const date = new Date(value);
+    return !isNaN(date.getTime());
+  }
+
+  // 獲取字段類型信息
+  private getFieldTypeInfo(value: any) {
+    return {
+      type: typeof value,
+      value: value,
+      isDate: this.isValidDateString(value)
+    };
   }
 
   // 測試表格可訪問性
@@ -276,36 +303,30 @@ export class AirtableService {
 
         // 獲取並記錄字段信息
         if (records.length > 0) {
-          const fields = records[0].fields;
-          const fieldNames = Object.keys(fields);
+          const record = records[0];
+          console.log('原始記錄:', record);
+          console.log('記錄 ID:', record.id);
+          console.log('字段數據:', record.fields);
+          
+          const fieldNames = Object.keys(record.fields);
           console.log(`表格 ${tableName} 字段列表:`, fieldNames);
-          console.log(`表格 ${tableName} 字段值示例:`, fields);
-        }
 
-        // 檢查必要字段
-        const requiredFields = this.getRequiredFields(tableName);
-        const missingFields = requiredFields.filter(field => {
-          const hasField = records.length > 0 && records[0].fields.hasOwnProperty(field);
-          if (!hasField) {
-            console.warn(`表格 ${tableName} 缺少字段: ${field}`);
+          // 檢查必要字段
+          const requiredFields = this.getRequiredFields(tableName);
+          const missingFields = requiredFields.filter(field => !fieldNames.includes(field));
+
+          if (missingFields.length > 0) {
+            console.warn(`表格 ${tableName} 缺少必要字段:`, missingFields);
+            console.warn('需要添加這些字段到 Airtable 表格中');
           }
-          return !hasField;
-        });
 
-        if (missingFields.length > 0) {
-          console.warn(`表格 ${tableName} 缺少必要字段:`, missingFields);
-        }
+          // 記錄字段值和類型
+          const fieldTypes = Object.entries(record.fields).reduce((acc, [key, value]) => {
+            acc[key] = this.getFieldTypeInfo(value);
+            return acc;
+          }, {} as Record<string, any>);
 
-        // 記錄示例數據
-        if (records.length > 0) {
-          const sampleRecord = records[0].fields;
-          console.log(`表格 ${tableName} 示例記錄:`, {
-            原始數據: sampleRecord,
-            字段類型: Object.entries(sampleRecord).reduce((acc, [key, value]) => {
-              acc[key] = typeof value;
-              return acc;
-            }, {} as Record<string, string>)
-          });
+          console.log(`表格 ${tableName} 字段類型:`, fieldTypes);
         }
       } catch (error) {
         console.error(`測試表格 ${tableName} 失敗:`, error);
@@ -341,9 +362,9 @@ export class AirtableService {
         id: record.id,
         fields: record.fields,
         fieldTypes: Object.entries(record.fields).reduce((acc, [key, value]) => {
-          acc[key] = typeof value;
+          acc[key] = this.getFieldTypeInfo(value);
           return acc;
-        }, {} as Record<string, string>)
+        }, {} as Record<string, any>)
       })));
 
       const fileStats = records
@@ -362,7 +383,7 @@ export class AirtableService {
             fileName: record.fields.file_name,
             lastAccessed,
             lastAccessedType: typeof lastAccessed,
-            downloadCount: record.fields.download_count
+            isValidDate: this.isValidDateString(lastAccessed)
           });
 
           return {
