@@ -361,11 +361,14 @@ export class AirtableService {
 
   // 更新文件統計
   public async updateFileStats(fileName: string, action: string): Promise<void> {
+    // 在函數開始時聲明變量
+    let normalizedFileName = '';
+    
     try {
       console.log('開始更新文件統計:', fileName, action);
       
       // 解析文件名
-      let normalizedFileName = fileName;
+      normalizedFileName = fileName;
       if (fileName.startsWith('{')) {
         try {
           const parsed = JSON.parse(fileName);
@@ -375,14 +378,18 @@ export class AirtableService {
         }
       }
 
-      // 移除可能的引號和跳脫字符
-      normalizedFileName = normalizedFileName.replace(/['"\\]/g, '');
+      // 移除可能的引號和跳脫字符，並進行 URL 編碼
+      normalizedFileName = normalizedFileName
+        .replace(/['"\\]/g, '')
+        .trim();
       
       console.log('標準化後的文件名:', normalizedFileName);
 
+      // 使用 SEARCH 函數代替完全匹配
       const records = await this.base('File_Stats')
         .select({
-          filterByFormula: `{file_name} = '${normalizedFileName}'`
+          filterByFormula: `LOWER(TRIM({file_name})) = LOWER("${normalizedFileName.replace(/"/g, '\\"')}")`,
+          maxRecords: 1
         })
         .firstPage();
 
@@ -393,21 +400,34 @@ export class AirtableService {
         const currentDownloads = (record.get('download_count') as number) || 0;
         const currentViews = (record.get('view_count') as number) || 0;
         
-        const updates: Record<string, any> = {
-          'file_name': normalizedFileName,
-          'last_accessed': now
-        };
-
+        let updates: Record<string, any> = {};
+        
         if (action === 'download') {
-          updates.download_count = currentDownloads + 1;
-          updates.last_downloaded = now;
+          updates = {
+            'download_count': currentDownloads + 1,
+            'last_downloaded': now,
+            'last_accessed': now
+          };
         } else if (action === 'file_open') {
-          updates.view_count = currentViews + 1;
+          updates = {
+            'view_count': currentViews + 1,
+            'last_accessed': now
+          };
         }
 
-        await this.base('File_Stats').update(record.id, updates);
-        console.log('文件統計更新成功');
+        // 只在必要時更新文件名
+        if (record.get('file_name') !== normalizedFileName) {
+          updates['file_name'] = normalizedFileName;
+        }
+
+        if (Object.keys(updates).length > 0) {
+          await this.base('File_Stats').update(record.id, updates);
+          console.log('文件統計更新成功:', updates);
+        } else {
+          console.log('無需更新文件統計');
+        }
       } else {
+        // 創建新記錄
         const newRecord = {
           'file_name': normalizedFileName,
           'download_count': action === 'download' ? 1 : 0,
@@ -416,11 +436,22 @@ export class AirtableService {
           'last_downloaded': action === 'download' ? now : ''
         };
 
-        await this.base('File_Stats').create(newRecord);
-        console.log('新的文件統計記錄創建成功');
+        const result = await this.base('File_Stats').create([
+          { fields: newRecord }
+        ]);
+        console.log('新的文件統計記錄創建成功:', result);
       }
     } catch (error) {
       console.error('更新文件統計失敗:', error);
+      // 記錄更詳細的錯誤信息
+      if ((error as AirtableError).statusCode === 422) {
+        console.error('請求格式錯誤，詳細信息:', {
+          originalFileName: fileName,
+          processedFileName: normalizedFileName,
+          action: action,
+          errorDetails: error
+        });
+      }
       throw error;
     }
   }
