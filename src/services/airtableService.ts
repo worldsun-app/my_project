@@ -1,185 +1,89 @@
 import Airtable from 'airtable';
 
-interface DailyStats {
+// 定義統計數據接口
+export interface DailyStats {
   date: string;
-  visits: number;
   downloads: number;
+  logins: number;
 }
 
-interface FileStats {
-  fileId: string;
+export interface FileStats {
   fileName: string;
-  viewCount: number;
   downloadCount: number;
-  firstViewed: string;
-  lastViewed: string;
+  lastDownloaded: string;
 }
 
-interface UserStats {
-  userId: string;
-  userName: string;
-  loginCount: number;
+export interface UserStats {
+  email: string;
   lastLogin: string;
+  loginCount: number;
 }
 
-interface DeviceStats {
+export interface DeviceStats {
   deviceType: string;
   count: number;
 }
 
-interface BrowserStats {
+export interface BrowserStats {
   browser: string;
   count: number;
 }
 
-interface AdminUser {
+export interface AdminUser {
   email: string;
 }
 
-interface ActivityData {
+export interface ActivityData {
   userId: string;
-  userName: string;
-  timestamp: string;
+  userEmail: string;
   action: string;
-  deviceType: string;
-  browser: string;
-  screenSize: string;
-  userAgent: string;
-  [key: string]: any;
+  details: string;
+  timestamp: string;
+  deviceInfo?: string;
+  browserInfo?: string;
 }
 
-export class AirtableService {
-  private base: any;
+class AirtableService {
+  private base: Airtable.Base;
 
   constructor() {
-    Airtable.configure({
+    this.base = new Airtable({
       apiKey: import.meta.env.VITE_AIRTABLE_API_KEY
-    });
-    this.base = Airtable.base(import.meta.env.VITE_AIRTABLE_BASE_ID);
+    }).base(import.meta.env.VITE_AIRTABLE_BASE_ID);
   }
 
-  async logActivity(activityData: ActivityData): Promise<void> {
+  // 記錄用戶活動
+  async logActivity(data: ActivityData): Promise<void> {
     try {
-      await this.base('Activity_Logs').create(activityData);
-
-      // 如果是文件操作，更新文件統計
-      if (activityData.action === 'file_open' && activityData.fileId) {
-        await this.updateFileStats(activityData.fileId);
-      }
-
-      // 更新每日統計
-      await this.updateDailyStats();
+      await this.base('Activity_Logs').create({
+        'User ID': data.userId,
+        'User Email': data.userEmail,
+        'Action': data.action,
+        'Details': data.details,
+        'Timestamp': data.timestamp,
+        'Device Info': data.deviceInfo,
+        'Browser Info': data.browserInfo
+      });
     } catch (error) {
       console.error('記錄活動失敗:', error);
       throw error;
     }
   }
 
-  private async updateFileStats(fileId: string): Promise<void> {
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      
-      const records = await this.base('File_Stats')
-        .select({
-          filterByFormula: `{fileId} = '${fileId}'`
-        })
-        .firstPage();
-
-      if (records && records.length > 0) {
-        await this.base('File_Stats').update([
-          {
-            id: records[0].id,
-            fields: {
-              viewCount: (records[0].fields.viewCount || 0) + 1,
-              lastViewed: today
-            }
-          }
-        ]);
-      } else {
-        await this.base('File_Stats').create([
-          {
-            fields: {
-              fileId: fileId,
-              viewCount: 1,
-              lastViewed: today,
-              firstViewed: today
-            }
-          }
-        ]);
-      }
-    } catch (error) {
-      console.error('更新文件統計失敗:', error);
-      throw error;
-    }
-  }
-
-  private async updateDailyStats(): Promise<void> {
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      
-      const records = await this.base('Daily_Stats')
-        .select({
-          filterByFormula: `{date} = '${today}'`
-        })
-        .firstPage();
-
-      if (records && records.length > 0) {
-        await this.base('Daily_Stats').update([
-          {
-            id: records[0].id,
-            fields: {
-              visits: (records[0].fields.visits || 0) + 1
-            }
-          }
-        ]);
-      } else {
-        await this.base('Daily_Stats').create([
-          {
-            fields: {
-              date: today,
-              visits: 1,
-              downloads: 0
-            }
-          }
-        ]);
-      }
-    } catch (error) {
-      console.error('更新每日統計失敗:', error);
-      throw error;
-    }
-  }
-
-  async getAdminUsers(): Promise<AdminUser[]> {
-    try {
-      const records = await this.base('Admin_Users')
-        .select()
-        .all();
-
-      return records.map((record: any) => ({
-        email: record.get('email')
-      }));
-    } catch (error) {
-      console.error('獲取管理員用戶失敗:', error);
-      return [];
-    }
-  }
-
-  async getDailyStats(startDate: string, endDate: string): Promise<DailyStats[]> {
+  // 獲取每日統計
+  async getDailyStats(): Promise<DailyStats[]> {
     try {
       const records = await this.base('Daily_Stats')
         .select({
-          filterByFormula: `AND(
-            {date} >= '${startDate}',
-            {date} <= '${endDate}'
-          )`,
-          sort: [{ field: 'date', direction: 'asc' }]
+          sort: [{ field: 'Date', direction: 'desc' }],
+          maxRecords: 30
         })
         .all();
 
-      return records.map((record: any) => ({
-        date: record.get('date'),
-        visits: record.get('visits') || 0,
-        downloads: record.get('downloads') || 0
+      return records.map(record => ({
+        date: record.get('Date') as string,
+        downloads: record.get('Downloads') as number || 0,
+        logins: record.get('Logins') as number || 0
       }));
     } catch (error) {
       console.error('獲取每日統計失敗:', error);
@@ -187,21 +91,20 @@ export class AirtableService {
     }
   }
 
+  // 獲取文件統計
   async getFileStats(): Promise<FileStats[]> {
     try {
       const records = await this.base('File_Stats')
         .select({
-          sort: [{ field: 'downloadCount', direction: 'desc' }]
+          sort: [{ field: 'Download Count', direction: 'desc' }],
+          maxRecords: 10
         })
         .all();
 
-      return records.map((record: any) => ({
-        fileId: record.get('fileId'),
-        fileName: record.get('fileName'),
-        viewCount: record.get('viewCount') || 0,
-        downloadCount: record.get('downloadCount') || 0,
-        firstViewed: record.get('firstViewed'),
-        lastViewed: record.get('lastViewed')
+      return records.map(record => ({
+        fileName: record.get('File Name') as string,
+        downloadCount: record.get('Download Count') as number || 0,
+        lastDownloaded: record.get('Last Downloaded') as string
       }));
     } catch (error) {
       console.error('獲取文件統計失敗:', error);
@@ -209,19 +112,20 @@ export class AirtableService {
     }
   }
 
+  // 獲取用戶統計
   async getUserStats(): Promise<UserStats[]> {
     try {
       const records = await this.base('User_Stats')
         .select({
-          sort: [{ field: 'lastLogin', direction: 'desc' }]
+          sort: [{ field: 'Last Login', direction: 'desc' }],
+          maxRecords: 10
         })
         .all();
 
-      return records.map((record: any) => ({
-        userId: record.get('userId'),
-        userName: record.get('userName'),
-        loginCount: record.get('loginCount') || 0,
-        lastLogin: record.get('lastLogin')
+      return records.map(record => ({
+        email: record.get('Email') as string,
+        lastLogin: record.get('Last Login') as string,
+        loginCount: record.get('Login Count') as number || 0
       }));
     } catch (error) {
       console.error('獲取用戶統計失敗:', error);
@@ -229,17 +133,18 @@ export class AirtableService {
     }
   }
 
+  // 獲取裝置統計
   async getDeviceStats(): Promise<DeviceStats[]> {
     try {
       const records = await this.base('Device_Stats')
         .select({
-          sort: [{ field: 'count', direction: 'desc' }]
+          sort: [{ field: 'Count', direction: 'desc' }]
         })
         .all();
 
-      return records.map((record: any) => ({
-        deviceType: record.get('deviceType'),
-        count: record.get('count') || 0
+      return records.map(record => ({
+        deviceType: record.get('Device Type') as string,
+        count: record.get('Count') as number || 0
       }));
     } catch (error) {
       console.error('獲取裝置統計失敗:', error);
@@ -247,21 +152,94 @@ export class AirtableService {
     }
   }
 
+  // 獲取瀏覽器統計
   async getBrowserStats(): Promise<BrowserStats[]> {
     try {
       const records = await this.base('Browser_Stats')
         .select({
-          sort: [{ field: 'count', direction: 'desc' }]
+          sort: [{ field: 'Count', direction: 'desc' }]
         })
         .all();
 
-      return records.map((record: any) => ({
-        browser: record.get('browser'),
-        count: record.get('count') || 0
+      return records.map(record => ({
+        browser: record.get('Browser') as string,
+        count: record.get('Count') as number || 0
       }));
     } catch (error) {
       console.error('獲取瀏覽器統計失敗:', error);
       return [];
     }
   }
-} 
+
+  // 獲取管理員用戶列表
+  async getAdminUsers(): Promise<string[]> {
+    try {
+      const records = await this.base('Admin_Users')
+        .select()
+        .all();
+
+      return records.map(record => record.get('Email') as string);
+    } catch (error) {
+      console.error('獲取管理員用戶列表失敗:', error);
+      return [];
+    }
+  }
+
+  // 更新文件統計
+  private async updateFileStats(fileName: string): Promise<void> {
+    try {
+      const records = await this.base('File_Stats')
+        .select({
+          filterByFormula: `{File Name} = '${fileName}'`
+        })
+        .firstPage();
+
+      if (records.length > 0) {
+        const record = records[0];
+        const currentCount = (record.get('Download Count') as number) || 0;
+        await this.base('File_Stats').update(record.id, {
+          'Download Count': currentCount + 1,
+          'Last Downloaded': new Date().toISOString()
+        });
+      } else {
+        await this.base('File_Stats').create({
+          'File Name': fileName,
+          'Download Count': 1,
+          'Last Downloaded': new Date().toISOString()
+        });
+      }
+    } catch (error) {
+      console.error('更新文件統計失敗:', error);
+    }
+  }
+
+  // 更新每日統計
+  private async updateDailyStats(): Promise<void> {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const records = await this.base('Daily_Stats')
+        .select({
+          filterByFormula: `{Date} = '${today}'`
+        })
+        .firstPage();
+
+      if (records.length > 0) {
+        const record = records[0];
+        const currentDownloads = (record.get('Downloads') as number) || 0;
+        await this.base('Daily_Stats').update(record.id, {
+          'Downloads': currentDownloads + 1
+        });
+      } else {
+        await this.base('Daily_Stats').create({
+          'Date': today,
+          'Downloads': 1,
+          'Logins': 0
+        });
+      }
+    } catch (error) {
+      console.error('更新每日統計失敗:', error);
+    }
+  }
+}
+
+export default new AirtableService(); 
