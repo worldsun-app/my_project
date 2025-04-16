@@ -55,7 +55,7 @@ export class AirtableService {
   // 記錄用戶活動
   async logActivity(data: ActivityData): Promise<void> {
     try {
-      await this.base('Activity_Logs').create({
+      await this.base('Activities').create({
         'User ID': data.userId,
         'User Email': data.userEmail,
         'Action': data.action,
@@ -73,7 +73,7 @@ export class AirtableService {
   // 獲取每日統計
   async getDailyStats(): Promise<DailyStats[]> {
     try {
-      const records = await this.base('Daily_Stats')
+      const records = await this.base('Daily')
         .select({
           sort: [{ field: 'Date', direction: 'desc' }],
           maxRecords: 30
@@ -94,7 +94,7 @@ export class AirtableService {
   // 獲取文件統計
   async getFileStats(): Promise<FileStats[]> {
     try {
-      const records = await this.base('File_Stats')
+      const records = await this.base('Files')
         .select({
           sort: [{ field: 'Download Count', direction: 'desc' }],
           maxRecords: 10
@@ -115,7 +115,7 @@ export class AirtableService {
   // 獲取用戶統計
   async getUserStats(): Promise<UserStats[]> {
     try {
-      const records = await this.base('User_Stats')
+      const records = await this.base('Users')
         .select({
           sort: [{ field: 'Last Login', direction: 'desc' }],
           maxRecords: 10
@@ -136,7 +136,7 @@ export class AirtableService {
   // 獲取裝置統計
   async getDeviceStats(): Promise<DeviceStats[]> {
     try {
-      const records = await this.base('Device_Stats')
+      const records = await this.base('Devices')
         .select({
           sort: [{ field: 'Count', direction: 'desc' }]
         })
@@ -155,7 +155,7 @@ export class AirtableService {
   // 獲取瀏覽器統計
   async getBrowserStats(): Promise<BrowserStats[]> {
     try {
-      const records = await this.base('Browser_Stats')
+      const records = await this.base('Browsers')
         .select({
           sort: [{ field: 'Count', direction: 'desc' }]
         })
@@ -174,11 +174,11 @@ export class AirtableService {
   // 獲取管理員用戶列表
   async getAdminUsers(): Promise<string[]> {
     try {
-      const records = await this.base('Admin_Users')
+      const records = await this.base('Admins')
         .select()
         .all();
 
-      return records.map(record => record.get('email') as string);
+      return records.map(record => record.get('Email') as string);
     } catch (error) {
       console.error('獲取管理員用戶列表失敗:', error);
       return [];
@@ -189,7 +189,7 @@ export class AirtableService {
   public async updateFileStats(fileName: string): Promise<void> {
     try {
       console.log('開始更新文件統計:', fileName);
-      const records = await this.base('File_Stats')
+      const records = await this.base('Files')
         .select({
           filterByFormula: `{File Name} = '${fileName}'`
         })
@@ -199,14 +199,14 @@ export class AirtableService {
         const record = records[0];
         const currentCount = (record.get('Download Count') as number) || 0;
         console.log('當前下載次數:', currentCount);
-        await this.base('File_Stats').update(record.id, {
+        await this.base('Files').update(record.id, {
           'Download Count': currentCount + 1,
           'Last Downloaded': new Date().toISOString()
         });
         console.log('文件統計更新成功');
       } else {
         console.log('創建新的文件統計記錄');
-        await this.base('File_Stats').create({
+        await this.base('Files').create({
           'File Name': fileName,
           'Download Count': 1,
           'Last Downloaded': new Date().toISOString()
@@ -224,7 +224,7 @@ export class AirtableService {
     try {
       console.log('開始更新每日統計');
       const today = new Date().toISOString().split('T')[0];
-      const records = await this.base('Daily_Stats')
+      const records = await this.base('Daily')
         .select({
           filterByFormula: `{Date} = '${today}'`
         })
@@ -234,13 +234,13 @@ export class AirtableService {
         const record = records[0];
         const currentDownloads = (record.get('Downloads') as number) || 0;
         console.log('當前每日下載次數:', currentDownloads);
-        await this.base('Daily_Stats').update(record.id, {
+        await this.base('Daily').update(record.id, {
           'Downloads': currentDownloads + 1
         });
         console.log('每日統計更新成功');
       } else {
         console.log('創建新的每日統計記錄');
-        await this.base('Daily_Stats').create({
+        await this.base('Daily').create({
           'Date': today,
           'Downloads': 1,
           'Logins': 0
