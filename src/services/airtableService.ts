@@ -249,16 +249,16 @@ export class AirtableService {
         return '無效日期';
       }
       
-      // 使用 toLocaleString 進行格式化
-      const formattedDate = date.toLocaleString('zh-TW', {
+      // 使用台北時區進行格式化
+      const formattedDate = new Intl.DateTimeFormat('zh-TW', {
+        timeZone: 'Asia/Taipei',
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
-        hour12: false,
-        timeZone: 'Asia/Taipei'  // 使用台北時區
-      });
+        hour12: false
+      }).format(date);
       
       console.log('日期格式化結果:', {
         input: dateTimeStr,
@@ -535,32 +535,25 @@ export class AirtableService {
       
       console.log('標準化後的文件名:', normalizedFileName);
 
-      // 使用台北時區的當前時間
+      // 使用 ISO 格式存儲時間
       const now = new Date();
-      // 轉換為 ISO 字符串並保留時區信息
-      const nowStr = now.toLocaleString('zh-TW', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-        timeZone: 'Asia/Taipei'
-      });
+      const nowISO = now.toISOString();
       
-      console.log('當前時間戳:', nowStr);
+      console.log('當前時間戳:', {
+        original: now,
+        iso: nowISO
+      });
 
       // 定義基本字段
       const baseFields = {
         'file_name': normalizedFileName,
         'download_count': 1,
-        'last_accessed': nowStr
+        'last_accessed': nowISO
       };
 
       // 根據操作類型添加額外字段
       const fields = action === 'download' 
-        ? { ...baseFields, 'last_downloaded': nowStr }
+        ? { ...baseFields, 'last_downloaded': nowISO }
         : baseFields;
 
       // 使用精確匹配查找記錄
@@ -578,12 +571,12 @@ export class AirtableService {
         const updates = action === 'download'
           ? {
               'download_count': currentDownloads,
-              'last_accessed': nowStr,
-              'last_downloaded': nowStr
+              'last_accessed': nowISO,
+              'last_downloaded': nowISO
             }
           : {
               'download_count': currentDownloads,
-              'last_accessed': nowStr
+              'last_accessed': nowISO
             };
 
         await this.base('File_Stats').update(record.id, updates);
