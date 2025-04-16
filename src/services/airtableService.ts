@@ -80,16 +80,18 @@ export class AirtableService {
       const updatePromises: Promise<void>[] = [];
       
       // 1. 記錄到 Activity_Logs
-      const activityPromise = this.base('Activity_Logs').create({
-        'User ID': data.userId,
-        'User Email': data.userEmail,
-        'Action': data.action,
-        'Details': data.details,
-        'Timestamp': data.timestamp,
-        'Device Info': data.deviceInfo,
-        'Browser Info': data.browserInfo
-      }).then(result => {
-        console.log('活動記錄成功:', result);
+      const activityPromise = this.base('Activity_Logs').create([{
+        fields: {
+          'User ID': data.userId,
+          'User Email': data.userEmail,
+          'Action': data.action,
+          'Details': data.details,
+          'Timestamp': data.timestamp,
+          'Device Info': data.deviceInfo,
+          'Browser Info': data.browserInfo
+        }
+      }]).then(records => {
+        console.log('活動記錄成功:', records);
       });
       
       updatePromises.push(activityPromise);
@@ -153,11 +155,13 @@ export class AirtableService {
         console.log('用戶統計更新成功');
       } else {
         console.log('創建新的用戶統計記錄');
-        await this.base('User_Stats').create({
-          'email': email,
-          'login_count': 1,
-          'last_login': new Date().toISOString()
-        });
+        await this.base('User_Stats').create([{
+          fields: {
+            'email': email,
+            'login_count': 1,
+            'last_login': new Date().toISOString()
+          }
+        }]);
         console.log('新的用戶統計記錄創建成功');
       }
     } catch (error) {
@@ -442,10 +446,12 @@ export class AirtableService {
         });
         console.log('設備統計更新成功');
       } else {
-        await this.base('Device_Stats').create({
-          'device_type': deviceInfo,
-          'count': 1
-        });
+        await this.base('Device_Stats').create([{
+          fields: {
+            'device_type': deviceInfo,
+            'count': 1
+          }
+        }]);
         console.log('新的設備統計記錄創建成功');
       }
     } catch (error) {
@@ -471,10 +477,12 @@ export class AirtableService {
         });
         console.log('瀏覽器統計更新成功');
       } else {
-        await this.base('Browser_Stats').create({
-          'browser': browserInfo,
-          'count': 1
-        });
+        await this.base('Browser_Stats').create([{
+          fields: {
+            'browser': browserInfo,
+            'count': 1
+          }
+        }]);
         console.log('新的瀏覽器統計記錄創建成功');
       }
     } catch (error) {
