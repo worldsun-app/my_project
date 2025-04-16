@@ -75,15 +75,15 @@ export class AirtableService {
     try {
       const records = await this.base('Daily_Stats')
         .select({
-          sort: [{ field: 'Date', direction: 'desc' }],
+          sort: [{ field: 'date', direction: 'desc' }],
           maxRecords: 30
         })
         .all();
 
       return records.map(record => ({
-        date: record.get('Date') as string,
-        downloads: record.get('Downloads') as number || 0,
-        logins: record.get('Logins') as number || 0
+        date: record.get('date') as string,
+        downloads: record.get('downloads') as number || 0,
+        logins: record.get('logins') as number || 0
       }));
     } catch (error) {
       console.error('獲取每日統計失敗:', error);
@@ -96,15 +96,15 @@ export class AirtableService {
     try {
       const records = await this.base('File_Stats')
         .select({
-          sort: [{ field: 'Download Count', direction: 'desc' }],
+          sort: [{ field: 'download_count', direction: 'desc' }],
           maxRecords: 10
         })
         .all();
 
       return records.map(record => ({
-        fileName: record.get('File Name') as string,
-        downloadCount: record.get('Download Count') as number || 0,
-        lastDownloaded: record.get('Last Downloaded') as string
+        fileName: record.get('file_name') as string,
+        downloadCount: record.get('download_count') as number || 0,
+        lastDownloaded: record.get('last_downloaded') as string
       }));
     } catch (error) {
       console.error('獲取文件統計失敗:', error);
@@ -117,15 +117,15 @@ export class AirtableService {
     try {
       const records = await this.base('User_Stats')
         .select({
-          sort: [{ field: 'Last Login', direction: 'desc' }],
+          sort: [{ field: 'last_login', direction: 'desc' }],
           maxRecords: 10
         })
         .all();
 
       return records.map(record => ({
-        email: record.get('Email') as string,
-        lastLogin: record.get('Last Login') as string,
-        loginCount: record.get('Login Count') as number || 0
+        email: record.get('email') as string,
+        lastLogin: record.get('last_login') as string,
+        loginCount: record.get('login_count') as number || 0
       }));
     } catch (error) {
       console.error('獲取用戶統計失敗:', error);
@@ -138,13 +138,13 @@ export class AirtableService {
     try {
       const records = await this.base('Device_Stats')
         .select({
-          sort: [{ field: 'Count', direction: 'desc' }]
+          sort: [{ field: 'count', direction: 'desc' }]
         })
         .all();
 
       return records.map(record => ({
-        deviceType: record.get('Device Type') as string,
-        count: record.get('Count') as number || 0
+        deviceType: record.get('device_type') as string,
+        count: record.get('count') as number || 0
       }));
     } catch (error) {
       console.error('獲取裝置統計失敗:', error);
@@ -157,13 +157,13 @@ export class AirtableService {
     try {
       const records = await this.base('Browser_Stats')
         .select({
-          sort: [{ field: 'Count', direction: 'desc' }]
+          sort: [{ field: 'count', direction: 'desc' }]
         })
         .all();
 
       return records.map(record => ({
-        browser: record.get('Browser') as string,
-        count: record.get('Count') as number || 0
+        browser: record.get('browser') as string,
+        count: record.get('count') as number || 0
       }));
     } catch (error) {
       console.error('獲取瀏覽器統計失敗:', error);
@@ -178,7 +178,7 @@ export class AirtableService {
         .select()
         .all();
 
-      return records.map(record => record.get('Email') as string);
+      return records.map(record => record.get('email') as string);
     } catch (error) {
       console.error('獲取管理員用戶列表失敗:', error);
       return [];
@@ -190,22 +190,22 @@ export class AirtableService {
     try {
       const records = await this.base('File_Stats')
         .select({
-          filterByFormula: `{File Name} = '${fileName}'`
+          filterByFormula: `{file_name} = '${fileName}'`
         })
         .firstPage();
 
       if (records.length > 0) {
         const record = records[0];
-        const currentCount = (record.get('Download Count') as number) || 0;
+        const currentCount = (record.get('download_count') as number) || 0;
         await this.base('File_Stats').update(record.id, {
-          'Download Count': currentCount + 1,
-          'Last Downloaded': new Date().toISOString()
+          'download_count': currentCount + 1,
+          'last_downloaded': new Date().toISOString()
         });
       } else {
         await this.base('File_Stats').create({
-          'File Name': fileName,
-          'Download Count': 1,
-          'Last Downloaded': new Date().toISOString()
+          'file_name': fileName,
+          'download_count': 1,
+          'last_downloaded': new Date().toISOString()
         });
       }
     } catch (error) {
@@ -219,21 +219,21 @@ export class AirtableService {
       const today = new Date().toISOString().split('T')[0];
       const records = await this.base('Daily_Stats')
         .select({
-          filterByFormula: `{Date} = '${today}'`
+          filterByFormula: `{date} = '${today}'`
         })
         .firstPage();
 
       if (records.length > 0) {
         const record = records[0];
-        const currentDownloads = (record.get('Downloads') as number) || 0;
+        const currentDownloads = (record.get('downloads') as number) || 0;
         await this.base('Daily_Stats').update(record.id, {
-          'Downloads': currentDownloads + 1
+          'downloads': currentDownloads + 1
         });
       } else {
         await this.base('Daily_Stats').create({
-          'Date': today,
-          'Downloads': 1,
-          'Logins': 0
+          'date': today,
+          'downloads': 1,
+          'logins': 0
         });
       }
     } catch (error) {
