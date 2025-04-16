@@ -206,11 +206,30 @@ export class AirtableService {
         })
         .all();
 
-      return records.map(record => ({
-        fileName: record.get('file_name') as string,
-        downloadCount: record.get('download_count') as number || 0,
-        lastDownloaded: record.get('last_downloaded') as string
-      }));
+      return records.map(record => {
+        const fileName = record.get('file_name');
+        // 如果 fileName 是 JSON 字符串，嘗試解析它
+        let parsedFileName = fileName;
+        if (typeof fileName === 'string' && fileName.startsWith('{')) {
+          try {
+            const parsed = JSON.parse(fileName);
+            parsedFileName = parsed.fileName || parsed.fileId || fileName;
+          } catch (e) {
+            console.warn('解析文件名失敗:', e);
+          }
+        }
+
+        const lastDownloaded = record.get('last_downloaded');
+        // 確保日期格式正確
+        const formattedDate = typeof lastDownloaded === 'string' ? 
+          new Date(lastDownloaded).toLocaleString('zh-TW') : '無記錄';
+
+        return {
+          fileName: parsedFileName as string,
+          downloadCount: record.get('download_count') as number || 0,
+          lastDownloaded: formattedDate
+        };
+      });
     } catch (error) {
       console.error('獲取文件統計失敗:', error);
       return [];
@@ -219,64 +238,30 @@ export class AirtableService {
 
   // 獲取用戶統計
   async getUserStats(): Promise<UserStats[]> {
-    const maxRetries = 3;
-    let retryCount = 0;
-
-    while (retryCount < maxRetries) {
-      try {
-        console.log(`嘗試獲取用戶統計 (第 ${retryCount + 1} 次)`);
-        console.log('查詢參數:', {
+    try {
+      const records = await this.base('User_Stats')
+        .select({
           sort: [{ field: 'last_login', direction: 'desc' }],
           maxRecords: 10
-        });
-        
-        const records = await this.base('User_Stats')
-          .select({
-            sort: [{ field: 'last_login', direction: 'desc' }],
-            maxRecords: 10
-          })
-          .all();
+        })
+        .all();
 
-        console.log('成功獲取用戶統計記錄:', records.length, '條');
-        console.log('記錄示例:', records[0] ? {
-          email: records[0].get('email'),
-          lastLogin: records[0].get('last_login'),
-          loginCount: records[0].get('login_count')
-        } : '無記錄');
+      return records.map(record => {
+        const lastLogin = record.get('last_login');
+        // 確保日期格式正確
+        const formattedDate = typeof lastLogin === 'string' ? 
+          new Date(lastLogin).toLocaleString('zh-TW') : '無記錄';
 
-        return records.map(record => ({
+        return {
           email: record.get('email') as string,
-          lastLogin: record.get('last_login') as string,
+          lastLogin: formattedDate,
           loginCount: record.get('login_count') as number || 0
-        }));
-      } catch (error) {
-        const airtableError = error as AirtableError;
-        console.error(`獲取用戶統計失敗 (第 ${retryCount + 1} 次):`, {
-          error: airtableError.error,
-          message: airtableError.message,
-          statusCode: airtableError.statusCode,
-          url: airtableError.url
-        });
-
-        if (airtableError.statusCode === 403) {
-          console.error('權限錯誤，請檢查 API Key 權限設置');
-          console.error('建議檢查：');
-          console.error('1. API Key 是否有對 User_Stats 表格的讀取權限');
-          console.error('2. 表格名稱是否正確（大小寫敏感）');
-          console.error('3. 欄位名稱是否正確（last_login, email, login_count）');
-          break;
-        }
-
-        retryCount++;
-        if (retryCount < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
-          continue;
-        }
-      }
+        };
+      });
+    } catch (error) {
+      console.error('獲取用戶統計失敗:', error);
+      return [];
     }
-
-    console.warn('獲取用戶統計失敗，返回空數據');
-    return [];
   }
 
   // 獲取裝置統計
