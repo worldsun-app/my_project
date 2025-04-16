@@ -153,13 +153,20 @@ const DashboardPage: React.FC = () => {
       .slice(0, 6);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('zh-TW', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return '無日期資料';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '無效日期';
+      return date.toLocaleDateString('zh-TW', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+    } catch (error) {
+      console.error('日期格式化錯誤:', error);
+      return '無效日期';
+    }
   };
 
   // 下載功能
@@ -417,7 +424,7 @@ const DashboardPage: React.FC = () => {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-gray-900 truncate">{file.name}</p>
                         <p className="text-xs text-gray-600 truncate mb-1">{file.title}</p>
-                        <p className="text-xs text-gray-400">{file.date}</p>
+                        <p className="text-xs text-gray-400">{formatDate(file.date)}</p>
                       </div>
                     </div>
                   </div>
@@ -449,7 +456,7 @@ const DashboardPage: React.FC = () => {
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-bold text-gray-900 truncate">{file.name}</p>
                                 <p className="text-xs text-gray-600 truncate mb-1">{file.title}</p>
-                                <p className="text-xs text-gray-400">{file.date}</p>
+                                <p className="text-xs text-gray-400">{formatDate(file.date)}</p>
                               </div>
                             </div>
                           </div>
@@ -473,7 +480,7 @@ const DashboardPage: React.FC = () => {
                   <div>
                     <h2 className="text-lg font-semibold text-gray-900">{selectedFile.name}</h2>
                     <p className="text-sm text-gray-600">{selectedFile.title}</p>
-                    <p className="text-sm text-gray-500">上次更新：{selectedFile.date}</p>
+                    <p className="text-sm text-gray-500">上次更新：{formatDate(selectedFile.date)}</p>
                   </div>
                   <div>
                     <button

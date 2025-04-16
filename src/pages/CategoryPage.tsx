@@ -284,7 +284,7 @@ const CategoryPage: React.FC = () => {
                 <div className="p-4">
                   <h3 className="text-lg font-medium text-gray-900 mb-2">{selectedFile.fields['文件名稱']}</h3>
                   <p className="text-sm text-gray-500 mb-4">
-                    最後更新: {new Date(selectedFile.fields['最後更新時間']).toLocaleDateString()}
+                    最後更新: {selectedFile.date || '無日期資料'}
                   </p>
                   <iframe
                     src={selectedFile.fields['文件連結']}
