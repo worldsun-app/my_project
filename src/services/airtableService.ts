@@ -232,25 +232,46 @@ export class AirtableService {
 
   // 格式化日期時間
   private formatDateTime(dateTimeStr: string | undefined | null): string {
-    if (!dateTimeStr) return '無日期資料';
+    if (!dateTimeStr) {
+      console.log('無日期數據:', dateTimeStr);
+      return '無日期資料';
+    }
     
     try {
+      console.log('格式化日期:', dateTimeStr);
+      
+      // 嘗試解析日期
       const date = new Date(dateTimeStr);
+      
+      // 檢查日期是否有效
       if (isNaN(date.getTime())) {
-        console.warn('無效的日期:', dateTimeStr);
+        console.warn('無效的日期字符串:', dateTimeStr);
         return '無效日期';
       }
       
-      return new Intl.DateTimeFormat('zh-TW', {
+      // 使用 toLocaleString 進行格式化
+      const formattedDate = date.toLocaleString('zh-TW', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
-        hour12: false
-      }).format(date);
+        hour12: false,
+        timeZone: 'Asia/Taipei'  // 使用台北時區
+      });
+      
+      console.log('日期格式化結果:', {
+        input: dateTimeStr,
+        parsed: date.toISOString(),
+        formatted: formattedDate
+      });
+      
+      return formattedDate;
     } catch (error) {
-      console.error('日期格式化錯誤:', error);
+      console.error('日期格式化錯誤:', {
+        input: dateTimeStr,
+        error: error
+      });
       return '無效日期';
     }
   }
@@ -361,7 +382,7 @@ export class AirtableService {
 
       const fileStats = records
         .filter(record => {
-          const fileName = record.fields.file_name;
+          const fileName = record.get('file_name');
           if (!fileName) {
             console.warn('發現缺少文件名的記錄:', record.id);
             return false;
@@ -369,38 +390,25 @@ export class AirtableService {
           return true;
         })
         .map(record => {
-          // 嘗試從 last_accessed 獲取最後訪問時間
-          const lastAccessTime = record.fields.last_accessed as string | undefined;
+          // 獲取最後訪問時間
+          const lastAccessTime = record.get('last_accessed');
+          const lastDownloadTime = record.get('last_downloaded');
           
-          let formattedDate = '無日期資料';
-          if (lastAccessTime && typeof lastAccessTime === 'string') {
-            try {
-              const date = new Date(lastAccessTime);
-              if (!isNaN(date.getTime())) {
-                formattedDate = date.toLocaleString('zh-TW', {
-                  year: 'numeric',
-                  month: '2-digit',
-                  day: '2-digit',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                });
-              }
-            } catch (error) {
-              console.error('日期格式化失敗:', error);
-            }
-          }
-
-          console.log('日期格式化過程:', {
-            originalTime: lastAccessTime,
-            formattedDate: formattedDate,
-            recordId: record.id,
-            fileName: record.fields.file_name
+          console.log('日期處理:', {
+            fileName: record.get('file_name'),
+            lastAccessTime,
+            lastDownloadTime,
+            lastAccessType: typeof lastAccessTime,
+            lastDownloadType: typeof lastDownloadTime
           });
 
+          // 使用最後下載時間，如果沒有則使用最後訪問時間
+          const displayTime = lastDownloadTime || lastAccessTime;
+          
           return {
-            fileName: record.fields.file_name as string,
-            downloadCount: (record.fields.download_count as number) || 0,
-            lastDownloaded: formattedDate
+            fileName: record.get('file_name') as string,
+            downloadCount: (record.get('download_count') as number) || 0,
+            lastDownloaded: this.formatDateTime(displayTime as string)
           };
         });
 
