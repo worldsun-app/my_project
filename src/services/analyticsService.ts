@@ -1,4 +1,4 @@
-import Airtable from 'airtable';
+import { AirtableService } from './airtableService';
 import { auth } from '../firebase';
 
 interface AirtableRecord {
@@ -6,252 +6,145 @@ interface AirtableRecord {
   get: (field: string) => any;
 }
 
+interface AdminStats {
+  dailyStats: {
+    date: string;
+    visits: number;
+    downloads: number;
+  }[];
+  fileStats: {
+    fileId: string;
+    fileName: string;
+    viewCount: number;
+    downloadCount: number;
+    firstViewed: string;
+    lastViewed: string;
+  }[];
+  userStats: {
+    userId: string;
+    userName: string;
+    loginCount: number;
+    lastLogin: string;
+  }[];
+  deviceStats: {
+    deviceType: string;
+    count: number;
+  }[];
+  browserStats: {
+    browser: string;
+    count: number;
+  }[];
+}
+
+interface AdminUser {
+  email: string;
+}
+
 export class AnalyticsService {
-  private base: any;
+  private airtableService: AirtableService;
 
   constructor() {
-    Airtable.configure({
-      apiKey: import.meta.env.VITE_AIRTABLE_API_KEY
-    });
-    this.base = Airtable.base(import.meta.env.VITE_AIRTABLE_BASE_ID);
+    this.airtableService = new AirtableService();
   }
 
-  async isAdmin(email: string): Promise<boolean> {
+  async logActivity(action: string, metadata: Record<string, any> = {}) {
     try {
-      const records = await this.base('Admin_Users').select({
-        filterByFormula: `{email} = '${email}'`
-      }).firstPage();
+      const user = auth.currentUser;
+      if (!user) return;
 
-      return records && records.length > 0;
+      const userAgent = this.getUserAgent();
+      const deviceType = this.getDeviceType();
+      const browser = this.getBrowser();
+      const screenSize = this.getScreenSize();
+
+      const activityData = {
+        userId: user.uid,
+        userName: user.displayName || user.email,
+        timestamp: new Date().toISOString(),
+        action,
+        ...metadata,
+        deviceType,
+        browser,
+        screenSize,
+        userAgent
+      };
+
+      await this.airtableService.logActivity(activityData);
     } catch (error) {
-      console.error('Failed to check admin status:', error);
+      console.error('記錄活動失敗:', error);
+    }
+  }
+
+  private getUserAgent(): string {
+    return navigator.userAgent;
+  }
+
+  private getDeviceType(): string {
+    const userAgent = navigator.userAgent.toLowerCase();
+    if (userAgent.includes('mobile')) return 'Mobile';
+    if (userAgent.includes('tablet')) return 'Tablet';
+    return 'Desktop';
+  }
+
+  private getBrowser(): string {
+    const userAgent = navigator.userAgent;
+    if (userAgent.includes('Chrome')) return 'Chrome';
+    if (userAgent.includes('Firefox')) return 'Firefox';
+    if (userAgent.includes('Safari')) return 'Safari';
+    if (userAgent.includes('Edge')) return 'Edge';
+    if (userAgent.includes('MSIE') || userAgent.includes('Trident/')) return 'Internet Explorer';
+    return 'Other';
+  }
+
+  private getScreenSize(): string {
+    return `${window.innerWidth}x${window.innerHeight}`;
+  }
+
+  async isAdmin(): Promise<boolean> {
+    try {
+      const user = auth.currentUser;
+      if (!user) return false;
+
+      const adminUsers = await this.airtableService.getAdminUsers();
+      return adminUsers.some((admin: AdminUser) => admin.email === user.email);
+    } catch (error) {
+      console.error('檢查管理員權限失敗:', error);
       return false;
     }
   }
 
-  async logActivity(action: string, metadata: any = {}) {
+  async getAdminStats(): Promise<AdminStats> {
     try {
-      const user = auth.currentUser;
-      if (!user) {
-        console.warn('No user logged in, skipping activity log');
-        return;
-      }
+      // 獲取過去 7 天的數據
+      const endDate = new Date().toISOString().split('T')[0];
+      const startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-      // 準備活動記錄數據
-      const activityData = {
-        userId: user.uid,
-        userName: user.displayName || user.email || 'Unknown User',
-        timestamp: new Date().toISOString(),
-        action,
-        ...metadata,
-        deviceType: this.getDeviceType(),
-        browser: this.getBrowser(),
-        screenSize: `${window.innerWidth}x${window.innerHeight}`
+      // 獲取每日統計
+      const dailyStats = await this.airtableService.getDailyStats(startDate, endDate);
+
+      // 獲取文件統計
+      const fileStats = await this.airtableService.getFileStats();
+
+      // 獲取用戶統計
+      const userStats = await this.airtableService.getUserStats();
+
+      // 獲取裝置統計
+      const deviceStats = await this.airtableService.getDeviceStats();
+
+      // 獲取瀏覽器統計
+      const browserStats = await this.airtableService.getBrowserStats();
+
+      return {
+        dailyStats,
+        fileStats,
+        userStats,
+        deviceStats,
+        browserStats
       };
-
-      console.log('Logging activity with data:', activityData);
-
-      // 創建活動記錄
-      const record = await this.base('Activity_Logs').create(activityData);
-      console.log('Activity logged successfully:', record);
-
-      // 如果是文件操作，更新文件統計
-      if (action === 'file_open' && metadata.fileId) {
-        await this.updateFileStats(metadata.fileId);
-      }
-
-      // 更新每日統計
-      await this.updateDailyStats();
-
     } catch (error) {
-      console.error('Failed to log activity:', error);
-      if (error instanceof Error) {
-        console.error('Error details:', {
-          message: error.message,
-          stack: error.stack,
-          name: error.name
-        });
-      }
+      console.error('獲取管理員統計數據失敗:', error);
+      throw error;
     }
-  }
-
-  private async updateFileStats(fileId: string) {
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      
-      const records = await this.base('File_Stats').select({
-        filterByFormula: `{fileId} = '${fileId}'`
-      }).firstPage();
-
-      if (records && records.length > 0) {
-        await this.base('File_Stats').update([
-          {
-            id: records[0].id,
-            fields: {
-              viewCount: (records[0].fields.viewCount || 0) + 1,
-              lastViewedAt: today
-            }
-          }
-        ]);
-      } else {
-        await this.base('File_Stats').create([
-          {
-            fields: {
-              fileId: fileId,
-              viewCount: 1,
-              lastViewedAt: today,
-              firstViewedAt: today
-            }
-          }
-        ]);
-      }
-    } catch (error) {
-      console.error('Failed to update file stats:', error);
-    }
-  }
-
-  private async updateDailyStats() {
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      
-      const records = await this.base('Daily_Stats').select({
-        filterByFormula: `{date} = '${today}'`
-      }).firstPage();
-
-      if (records && records.length > 0) {
-        await this.base('Daily_Stats').update([
-          {
-            id: records[0].id,
-            fields: {
-              visitCount: (records[0].fields.visitCount || 0) + 1
-            }
-          }
-        ]);
-      } else {
-        await this.base('Daily_Stats').create([
-          {
-            fields: {
-              date: today,
-              visitCount: 1
-            }
-          }
-        ]);
-      }
-    } catch (error) {
-      console.error('Failed to update daily stats:', error);
-    }
-  }
-
-  async getFileStats(fileId?: string): Promise<Array<{ fileId: string; fileName: string; viewCount: number }> | { viewCount: number; lastViewedAt: string; firstViewedAt: string } | null> {
-    try {
-      if (fileId) {
-        const records = await this.base('File_Stats').select({
-          filterByFormula: `{fileId} = '${fileId}'`
-        }).firstPage();
-
-        if (records && records.length > 0) {
-          return {
-            viewCount: records[0].fields.viewCount || 0,
-            lastViewedAt: records[0].fields.lastViewedAt,
-            firstViewedAt: records[0].fields.firstViewedAt
-          };
-        }
-        return null;
-      } else {
-        const records = await this.base('File_Stats').select({
-          sort: [{ field: 'viewCount', direction: 'desc' }],
-          maxRecords: 10
-        }).all();
-
-        return records.map((record: AirtableRecord) => ({
-          fileId: record.get('fileId') as string,
-          fileName: record.get('fileName') as string,
-          viewCount: record.get('viewCount') as number
-        }));
-      }
-    } catch (error) {
-      console.error('Failed to get file stats:', error);
-      return fileId ? null : [];
-    }
-  }
-
-  async getDailyStats(startDate?: string, endDate?: string): Promise<Array<{ date: string; visitCount: number }>> {
-    try {
-      if (startDate && endDate) {
-        const records = await this.base('Daily_Stats').select({
-          filterByFormula: `AND({date} >= '${startDate}', {date} <= '${endDate}')`
-        }).firstPage();
-
-        return records.map((record: AirtableRecord) => ({
-          date: record.fields.date,
-          visitCount: record.fields.visitCount || 0
-        }));
-      } else {
-        const records = await this.base('Daily_Stats').select({
-          sort: [{ field: 'date', direction: 'desc' }],
-          maxRecords: 30
-        }).all();
-
-        return records.map((record: AirtableRecord) => ({
-          date: record.get('date') as string,
-          visitCount: record.get('visitCount') as number
-        }));
-      }
-    } catch (error) {
-      console.error('Failed to get daily stats:', error);
-      return [];
-    }
-  }
-
-  async getDeviceStats(): Promise<Array<{ deviceType: string; count: number }>> {
-    const records = await this.base('Activity_Logs').select({
-      groupBy: [{ field: 'deviceType' }],
-      fields: ['deviceType']
-    }).all();
-
-    const deviceCounts = new Map<string, number>();
-    records.forEach((record: AirtableRecord) => {
-      const deviceType = record.get('deviceType') as string;
-      deviceCounts.set(deviceType, (deviceCounts.get(deviceType) || 0) + 1);
-    });
-
-    return Array.from(deviceCounts.entries()).map(([deviceType, count]) => ({
-      deviceType,
-      count
-    }));
-  }
-
-  async getBrowserStats(): Promise<Array<{ browser: string; count: number }>> {
-    const records = await this.base('Activity_Logs').select({
-      groupBy: [{ field: 'browser' }],
-      fields: ['browser']
-    }).all();
-
-    const browserCounts = new Map<string, number>();
-    records.forEach((record: AirtableRecord) => {
-      const browser = record.get('browser') as string;
-      browserCounts.set(browser, (browserCounts.get(browser) || 0) + 1);
-    });
-
-    return Array.from(browserCounts.entries()).map(([browser, count]) => ({
-      browser,
-      count
-    }));
-  }
-
-  private getDeviceType(): string {
-    const ua = navigator.userAgent;
-    if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
-      return 'tablet';
-    }
-    if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) {
-      return 'mobile';
-    }
-    return 'desktop';
-  }
-
-  private getBrowser(): string {
-    return navigator.userAgent;
   }
 }
 
