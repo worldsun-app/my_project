@@ -42,26 +42,24 @@ interface AdminUser {
 
 export class AnalyticsService {
   // 記錄用戶活動
-  async logActivity(
-    userId: string,
-    userEmail: string,
-    action: string,
-    details: string,
-    deviceInfo?: string,
-    browserInfo?: string
-  ): Promise<void> {
+  async logActivity(data: ActivityData): Promise<void> {
     try {
-      await airtableService.logActivity({
-        userId,
-        userEmail,
-        action,
-        details,
-        timestamp: new Date().toISOString(),
-        deviceInfo,
-        browserInfo
-      });
+      console.log('開始記錄活動:', data);
+      const result = await airtableService.logActivity(data);
+      console.log('活動記錄成功:', result);
+
+      // 如果是文件操作，更新文件統計
+      if (data.action.includes('file')) {
+        console.log('更新文件統計:', data.details);
+        await airtableService.updateFileStats(data.details);
+      }
+
+      // 更新每日統計
+      console.log('更新每日統計');
+      await airtableService.updateDailyStats();
     } catch (error) {
       console.error('記錄活動失敗:', error);
+      throw error;
     }
   }
 

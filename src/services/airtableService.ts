@@ -186,8 +186,9 @@ export class AirtableService {
   }
 
   // 更新文件統計
-  private async updateFileStats(fileName: string): Promise<void> {
+  public async updateFileStats(fileName: string): Promise<void> {
     try {
+      console.log('開始更新文件統計:', fileName);
       const records = await this.base('File_Stats')
         .select({
           filterByFormula: `{file_name} = '${fileName}'`
@@ -197,25 +198,31 @@ export class AirtableService {
       if (records.length > 0) {
         const record = records[0];
         const currentCount = (record.get('download_count') as number) || 0;
+        console.log('當前下載次數:', currentCount);
         await this.base('File_Stats').update(record.id, {
           'download_count': currentCount + 1,
           'last_downloaded': new Date().toISOString()
         });
+        console.log('文件統計更新成功');
       } else {
+        console.log('創建新的文件統計記錄');
         await this.base('File_Stats').create({
           'file_name': fileName,
           'download_count': 1,
           'last_downloaded': new Date().toISOString()
         });
+        console.log('新的文件統計記錄創建成功');
       }
     } catch (error) {
       console.error('更新文件統計失敗:', error);
+      throw error;
     }
   }
 
   // 更新每日統計
-  private async updateDailyStats(): Promise<void> {
+  public async updateDailyStats(): Promise<void> {
     try {
+      console.log('開始更新每日統計');
       const today = new Date().toISOString().split('T')[0];
       const records = await this.base('Daily_Stats')
         .select({
@@ -226,18 +233,23 @@ export class AirtableService {
       if (records.length > 0) {
         const record = records[0];
         const currentDownloads = (record.get('downloads') as number) || 0;
+        console.log('當前每日下載次數:', currentDownloads);
         await this.base('Daily_Stats').update(record.id, {
           'downloads': currentDownloads + 1
         });
+        console.log('每日統計更新成功');
       } else {
+        console.log('創建新的每日統計記錄');
         await this.base('Daily_Stats').create({
           'date': today,
           'downloads': 1,
           'logins': 0
         });
+        console.log('新的每日統計記錄創建成功');
       }
     } catch (error) {
       console.error('更新每日統計失敗:', error);
+      throw error;
     }
   }
 }
