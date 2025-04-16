@@ -92,10 +92,8 @@ export class AirtableService {
         
         console.log('活動記錄成功:', result);
 
-        // 2. 更新用戶統計
-        if (data.action === 'login') {
-          await this.updateUserStats(data.userEmail);
-        }
+        // 2. 更新用戶統計（無論是登入還是文件操作）
+        await this.updateUserStats(data.userEmail);
 
         // 3. 更新文件統計
         if (data.action === 'download' || data.action === 'view') {
