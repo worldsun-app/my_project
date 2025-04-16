@@ -43,7 +43,7 @@ export interface ActivityData {
   browserInfo?: string;
 }
 
-class AirtableService {
+export class AirtableService {
   private base: Airtable.Base;
 
   constructor() {
@@ -242,4 +242,5 @@ class AirtableService {
   }
 }
 
-export default new AirtableService(); 
+// 導出單例實例
+export const airtableService = new AirtableService(); 
