@@ -158,14 +158,29 @@ const DashboardPage: React.FC = () => {
   };
 
   // 下載功能
-  const handleDownload = (file: FileData) => {
+  const handleDownload = async (file: FileData) => {
     if (file.files && file.files.length > 0 && file.files[0].url) {
-      const link = document.createElement('a');
-      link.href = file.files[0].url;
-      link.download = file.name;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      try {
+        // 記錄下載活動
+        await analyticsService.logActivity({
+          userId: user?.uid || '',
+          userEmail: user?.email || '',
+          action: 'file_download',
+          details: file.name,
+          timestamp: new Date().toISOString(),
+          deviceInfo: navigator.userAgent,
+          browserInfo: navigator.userAgent
+        });
+
+        const link = document.createElement('a');
+        link.href = file.files[0].url;
+        link.download = file.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (error) {
+        console.error('下載文件時發生錯誤:', error);
+      }
     } else {
       console.error('No attachment URL found for file:', file.name);
     }
