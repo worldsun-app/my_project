@@ -115,4 +115,6 @@ export class AnalyticsService {
   }
 }
 
-export default new AnalyticsService(); 
+// 導出單例實例
+export const analyticsService = new AnalyticsService();
+export default analyticsService; 
