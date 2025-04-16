@@ -93,14 +93,24 @@ export class AirtableService {
         
         console.log('活動記錄成功:', result);
 
-        // 2. 更新用戶統計（無論是登入還是文件操作）
+        // 2. 更新用戶統計
         await this.updateUserStats(data.userEmail);
 
         // 3. 更新文件統計
-        if (data.action === 'download' || data.action === 'view') {
-          const fileName = data.details.split(':')[1]?.trim();
-          if (fileName) {
-            await this.updateFileStats(fileName);
+        if (data.action === 'download' || data.action === 'file_open') {
+          let fileInfo: { fileName?: string } = {};
+          
+          try {
+            // 嘗試解析 details 中的文件信息
+            fileInfo = JSON.parse(data.details);
+          } catch (e) {
+            console.warn('解析文件信息失敗:', e);
+            // 如果解析失敗，嘗試直接使用 details
+            fileInfo = { fileName: data.details };
+          }
+
+          if (fileInfo.fileName) {
+            await this.updateFileStats(fileInfo.fileName, data.action);
           }
         }
 
@@ -231,21 +241,19 @@ export class AirtableService {
   // 獲取文件統計
   async getFileStats(): Promise<FileStats[]> {
     try {
-      // 先獲取所有文件統計記錄
       const records = await this.base('File_Stats')
         .select({
           sort: [{ field: 'download_count', direction: 'desc' }]
         })
         .all();
 
-      // 過濾和轉換數據
       const fileStats = records
         .filter(record => {
           const fileName = record.get('file_name');
           return fileName && typeof fileName === 'string';
         })
         .map(record => {
-          const lastDownloaded = record.get('last_downloaded');
+          const lastDownloaded = record.get('last_downloaded') || record.get('last_accessed');
           const formattedDate = lastDownloaded ? 
             new Date(lastDownloaded as string).toLocaleString('zh-TW', {
               year: 'numeric',
@@ -261,9 +269,7 @@ export class AirtableService {
             viewCount: record.get('view_count') as number || 0,
             lastDownloaded: formattedDate
           };
-        })
-        .sort((a, b) => b.downloadCount - a.downloadCount)
-        .slice(0, 10); // 只返回前10個最熱門的文件
+        });
 
       console.log('獲取到的文件統計:', fileStats);
       return fileStats;
@@ -354,11 +360,11 @@ export class AirtableService {
   }
 
   // 更新文件統計
-  public async updateFileStats(fileName: string): Promise<void> {
+  public async updateFileStats(fileName: string, action: string): Promise<void> {
     try {
-      console.log('開始更新文件統計:', fileName);
+      console.log('開始更新文件統計:', fileName, action);
       
-      // 檢查文件名是否是 JSON 格式
+      // 解析文件名
       let normalizedFileName = fileName;
       if (fileName.startsWith('{')) {
         try {
@@ -369,12 +375,14 @@ export class AirtableService {
         }
       }
 
+      // 移除可能的引號和跳脫字符
+      normalizedFileName = normalizedFileName.replace(/['"\\]/g, '');
+      
+      console.log('標準化後的文件名:', normalizedFileName);
+
       const records = await this.base('File_Stats')
         .select({
-          filterByFormula: `OR(
-            {file_name} = '${normalizedFileName}',
-            {file_name} = '${fileName}'
-          )`
+          filterByFormula: `{file_name} = '${normalizedFileName}'`
         })
         .firstPage();
 
@@ -382,23 +390,33 @@ export class AirtableService {
 
       if (records.length > 0) {
         const record = records[0];
-        const currentCount = (record.get('download_count') as number) || 0;
+        const currentDownloads = (record.get('download_count') as number) || 0;
         const currentViews = (record.get('view_count') as number) || 0;
         
-        await this.base('File_Stats').update(record.id, {
+        const updates: Record<string, any> = {
           'file_name': normalizedFileName,
-          'download_count': currentCount + 1,
-          'view_count': currentViews,
-          'last_downloaded': now
-        });
+          'last_accessed': now
+        };
+
+        if (action === 'download') {
+          updates.download_count = currentDownloads + 1;
+          updates.last_downloaded = now;
+        } else if (action === 'file_open') {
+          updates.view_count = currentViews + 1;
+        }
+
+        await this.base('File_Stats').update(record.id, updates);
         console.log('文件統計更新成功');
       } else {
-        await this.base('File_Stats').create({
+        const newRecord = {
           'file_name': normalizedFileName,
-          'download_count': 1,
-          'view_count': 0,
-          'last_downloaded': now
-        });
+          'download_count': action === 'download' ? 1 : 0,
+          'view_count': action === 'file_open' ? 1 : 0,
+          'last_accessed': now,
+          'last_downloaded': action === 'download' ? now : ''
+        };
+
+        await this.base('File_Stats').create(newRecord);
         console.log('新的文件統計記錄創建成功');
       }
     } catch (error) {
