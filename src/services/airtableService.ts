@@ -400,7 +400,10 @@ export class AirtableService {
             console.error('更新文件統計記錄失敗:', {
               recordId: record.id,
               updates,
-              error: updateError
+              error: updateError,
+              errorDetails: (updateError as any).error,
+              message: (updateError as any).message,
+              statusCode: (updateError as any).statusCode
             });
             throw updateError;
           }
@@ -410,49 +413,56 @@ export class AirtableService {
       } else {
         // 創建新記錄
         try {
-          // 使用正確的 Airtable API 格式
           const fields = {
             'file_name': normalizedFileName,
             'download_count': action === 'download' ? 1 : 0,
             'view_count': action === 'file_open' ? 1 : 0,
             'last_accessed': now,
-            'last_downloaded': action === 'download' ? now : ''
+            'last_downloaded': action === 'download' ? now : undefined
           };
 
-          console.log('準備創建新記錄:', fields);
+          console.log('準備創建新記錄，完整字段:', fields);
 
+          // 使用正確的 Airtable API 格式
           const createResult = await this.base('File_Stats').create([
             { fields }
           ]);
 
           console.log('新的文件統計記錄創建成功:', createResult);
-        } catch (createError) {
-          const airtableError = createError as AirtableError;
-          console.error('創建文件統計記錄失敗:', {
-            fileName: normalizedFileName,
-            error: airtableError,
-            statusCode: airtableError.statusCode,
-            message: airtableError.message,
-            url: airtableError.url
+        } catch (createError: any) {
+          console.error('創建文件統計記錄失敗，完整錯誤信息:', {
+            error: createError,
+            errorObject: {
+              error: createError.error,
+              message: createError.message,
+              statusCode: createError.statusCode,
+              type: createError.type
+            },
+            requestData: {
+              fileName: normalizedFileName,
+              action: action,
+              fields: {
+                'file_name': normalizedFileName,
+                'download_count': action === 'download' ? 1 : 0,
+                'view_count': action === 'file_open' ? 1 : 0,
+                'last_accessed': now,
+                'last_downloaded': action === 'download' ? now : undefined
+              }
+            }
           });
           throw createError;
         }
       }
-    } catch (error) {
-      console.error('更新文件統計失敗:', error);
-      // 記錄更詳細的錯誤信息
-      if ((error as AirtableError).statusCode === 422) {
-        const airtableError = error as AirtableError;
-        console.error('請求格式錯誤，詳細信息:', {
-          originalFileName: fileName,
-          processedFileName: normalizedFileName,
-          action: action,
-          statusCode: airtableError.statusCode,
-          message: airtableError.message,
-          url: airtableError.url,
-          error: airtableError.error
-        });
-      }
+    } catch (error: any) {
+      console.error('更新文件統計失敗，詳細錯誤:', {
+        originalFileName: fileName,
+        processedFileName: normalizedFileName,
+        action: action,
+        errorType: error.type,
+        statusCode: error.statusCode,
+        message: error.message,
+        fullError: error
+      });
       throw error;
     }
   }
