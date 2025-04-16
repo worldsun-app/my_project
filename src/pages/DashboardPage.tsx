@@ -93,9 +93,14 @@ const DashboardPage: React.FC = () => {
     return () => {
       const duration = Date.now() - startTime;
       if (user) {
-        analyticsService.logActivity('page_exit', {
-          category: 'dashboard',
-          duration
+        analyticsService.logActivity({
+          userId: user.uid,
+          userEmail: user.email || '',
+          action: 'page_exit',
+          details: JSON.stringify({ category: 'dashboard', duration }),
+          timestamp: new Date().toISOString(),
+          deviceInfo: navigator.userAgent,
+          browserInfo: navigator.userAgent
         });
       }
     };
@@ -196,10 +201,18 @@ const DashboardPage: React.FC = () => {
   const handleFileClick = async (file: FileData) => {
     try {
       // 記錄文件打開活動
-      await analyticsService.logActivity('file_open', {
-        fileId: file.id,
-        fileName: file.name,
-        category: file.category
+      await analyticsService.logActivity({
+        userId: user?.uid || '',
+        userEmail: user?.email || '',
+        action: 'file_open',
+        details: JSON.stringify({
+          fileId: file.id,
+          fileName: file.name,
+          category: file.category
+        }),
+        timestamp: new Date().toISOString(),
+        deviceInfo: navigator.userAgent,
+        browserInfo: navigator.userAgent
       });
 
       // 在新視窗中打開文件
