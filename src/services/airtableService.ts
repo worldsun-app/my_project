@@ -43,6 +43,12 @@ export interface ActivityData {
   browserInfo?: string;
 }
 
+interface AirtableError {
+  error: string;
+  message: string;
+  statusCode: number;
+}
+
 export class AirtableService {
   private base: Airtable.Base;
 
@@ -55,7 +61,7 @@ export class AirtableService {
   // 記錄用戶活動
   async logActivity(data: ActivityData): Promise<void> {
     try {
-      await this.base('Activity_Logs').create({
+      console.log('準備記錄活動，數據結構:', {
         'User ID': data.userId,
         'User Email': data.userEmail,
         'Action': data.action,
@@ -64,8 +70,32 @@ export class AirtableService {
         'Device Info': data.deviceInfo,
         'Browser Info': data.browserInfo
       });
+      
+      await this.base('Activity_Logs').create([
+        {
+          fields: {
+            'User ID': data.userId,
+            'User Email': data.userEmail,
+            'Action': data.action,
+            'Details': data.details,
+            'Timestamp': data.timestamp,
+            'Device Info': data.deviceInfo,
+            'Browser Info': data.browserInfo
+          }
+        }
+      ]);
     } catch (error) {
-      console.error('記錄活動失敗:', error);
+      const airtableError = error as AirtableError;
+      console.error('記錄活動失敗，完整錯誤:', airtableError);
+      if (airtableError.message) {
+        console.error('錯誤信息:', airtableError.message);
+      }
+      if (airtableError.statusCode) {
+        console.error('狀態碼:', airtableError.statusCode);
+      }
+      if (airtableError.error) {
+        console.error('錯誤類型:', airtableError.error);
+      }
       throw error;
     }
   }
