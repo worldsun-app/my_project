@@ -200,7 +200,12 @@ const DashboardPage: React.FC = () => {
 
   const handleFileClick = async (file: FileData) => {
     try {
-      // 記錄文件打開活動
+      // 先打開文件
+      if (file.files?.[0]?.url) {
+        window.open(file.files[0].url, '_blank');
+      }
+
+      // 嘗試記錄活動
       await analyticsService.logActivity({
         userId: user?.uid || '',
         userEmail: user?.email || '',
@@ -213,12 +218,11 @@ const DashboardPage: React.FC = () => {
         timestamp: new Date().toISOString(),
         deviceInfo: navigator.userAgent,
         browserInfo: navigator.userAgent
+      }).catch(error => {
+        console.warn('記錄活動失敗，但不影響文件打開:', error);
       });
-
-      // 在新視窗中打開文件
-      window.open(file.files?.[0]?.url, '_blank');
     } catch (error) {
-      console.error('Error opening file:', error);
+      console.error('打開文件時發生錯誤:', error);
     }
   };
 
