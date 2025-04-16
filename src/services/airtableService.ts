@@ -79,6 +79,7 @@ export class AirtableService {
           'Browser Info': data.browserInfo
         });
         
+        // 記錄到 Activity_Logs
         const result = await this.base('Activity_Logs').create({
           'User ID': data.userId,
           'User Email': data.userEmail,
@@ -90,6 +91,23 @@ export class AirtableService {
         });
         
         console.log('活動記錄成功:', result);
+
+        // 如果是登入操作，更新用戶統計
+        if (data.action === 'login') {
+          await this.updateUserStats(data.userEmail);
+        }
+
+        // 如果是文件操作，更新文件統計
+        if (data.action === 'download' || data.action === 'view') {
+          const fileName = data.details.split(':')[1]?.trim();
+          if (fileName) {
+            await this.updateFileStats(fileName);
+          }
+        }
+
+        // 更新每日統計
+        await this.updateDailyStats();
+
         return;
       } catch (error) {
         const airtableError = error as AirtableError;
@@ -101,21 +119,52 @@ export class AirtableService {
 
         if (airtableError.statusCode === 403) {
           console.error('權限錯誤，請檢查 API Key 權限設置');
-          // 如果是權限錯誤，不需要重試
           break;
         }
 
         retryCount++;
         if (retryCount < maxRetries) {
-          // 等待一段時間後重試
           await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
           continue;
         }
       }
     }
 
-    // 如果所有重試都失敗，記錄警告但不中斷操作
     console.warn('活動記錄失敗，但操作將繼續進行');
+  }
+
+  // 更新用戶統計
+  private async updateUserStats(email: string): Promise<void> {
+    try {
+      console.log('開始更新用戶統計:', email);
+      const records = await this.base('User_Stats')
+        .select({
+          filterByFormula: `{email} = '${email}'`
+        })
+        .firstPage();
+
+      if (records.length > 0) {
+        const record = records[0];
+        const currentCount = (record.get('login_count') as number) || 0;
+        console.log('當前登入次數:', currentCount);
+        await this.base('User_Stats').update(record.id, {
+          'login_count': currentCount + 1,
+          'last_login': new Date().toISOString()
+        });
+        console.log('用戶統計更新成功');
+      } else {
+        console.log('創建新的用戶統計記錄');
+        await this.base('User_Stats').create({
+          'email': email,
+          'login_count': 1,
+          'last_login': new Date().toISOString()
+        });
+        console.log('新的用戶統計記錄創建成功');
+      }
+    } catch (error) {
+      console.error('更新用戶統計失敗:', error);
+      throw error;
+    }
   }
 
   // 獲取每日統計
