@@ -370,25 +370,39 @@ export class AirtableService {
     try {
       console.log('開始更新每日統計');
       const today = new Date().toISOString().split('T')[0];
-      const records = await this.base('Daily_Stats')
+      
+      // 獲取今天的活動記錄
+      const activityRecords = await this.base('Activity_Logs')
+        .select({
+          filterByFormula: `AND(
+            IS_SAME({Timestamp}, '${today}', 'day'),
+            OR(
+              {Action} = 'download',
+              {Action} = 'view'
+            )
+          )`
+        })
+        .all();
+
+      const downloadCount = activityRecords.length;
+      console.log(`今日下載總數: ${downloadCount}`);
+
+      const dailyRecords = await this.base('Daily_Stats')
         .select({
           filterByFormula: `{date} = '${today}'`
         })
         .firstPage();
 
-      if (records.length > 0) {
-        const record = records[0];
-        const currentDownloads = (record.get('downloads') as number) || 0;
-        console.log('當前每日下載次數:', currentDownloads);
+      if (dailyRecords.length > 0) {
+        const record = dailyRecords[0];
         await this.base('Daily_Stats').update(record.id, {
-          'downloads': currentDownloads + 1
+          'downloads': downloadCount
         });
         console.log('每日統計更新成功');
       } else {
-        console.log('創建新的每日統計記錄');
         await this.base('Daily_Stats').create({
           'date': today,
-          'downloads': 1,
+          'downloads': downloadCount,
           'logins': 0
         });
         console.log('新的每日統計記錄創建成功');
