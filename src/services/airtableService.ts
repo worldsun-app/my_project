@@ -60,43 +60,58 @@ export class AirtableService {
 
   // 記錄用戶活動
   async logActivity(data: ActivityData): Promise<void> {
-    try {
-      console.log('準備記錄活動，數據結構:', {
-        'User ID': data.userId,
-        'User Email': data.userEmail,
-        'Action': data.action,
-        'Details': data.details,
-        'Timestamp': data.timestamp,
-        'Device Info': data.deviceInfo,
-        'Browser Info': data.browserInfo
-      });
-      
-      const result = await this.base('Activity_Logs').create({
-        'User ID': data.userId,
-        'User Email': data.userEmail,
-        'Action': data.action,
-        'Details': data.details,
-        'Timestamp': data.timestamp,
-        'Device Info': data.deviceInfo,
-        'Browser Info': data.browserInfo
-      });
-      
-      console.log('活動記錄成功:', result);
-    } catch (error) {
-      const airtableError = error as AirtableError;
-      console.error('記錄活動失敗，完整錯誤:', airtableError);
-      if (airtableError.message) {
-        console.error('錯誤信息:', airtableError.message);
+    const maxRetries = 3;
+    let retryCount = 0;
+
+    while (retryCount < maxRetries) {
+      try {
+        console.log(`嘗試記錄活動 (第 ${retryCount + 1} 次):`, {
+          'User ID': data.userId,
+          'User Email': data.userEmail,
+          'Action': data.action,
+          'Details': data.details,
+          'Timestamp': data.timestamp,
+          'Device Info': data.deviceInfo,
+          'Browser Info': data.browserInfo
+        });
+        
+        const result = await this.base('Activity_Logs').create({
+          'User ID': data.userId,
+          'User Email': data.userEmail,
+          'Action': data.action,
+          'Details': data.details,
+          'Timestamp': data.timestamp,
+          'Device Info': data.deviceInfo,
+          'Browser Info': data.browserInfo
+        });
+        
+        console.log('活動記錄成功:', result);
+        return;
+      } catch (error) {
+        const airtableError = error as AirtableError;
+        console.error(`記錄活動失敗 (第 ${retryCount + 1} 次):`, {
+          error: airtableError.error,
+          message: airtableError.message,
+          statusCode: airtableError.statusCode
+        });
+
+        if (airtableError.statusCode === 403) {
+          console.error('權限錯誤，請檢查 API Key 權限設置');
+          // 如果是權限錯誤，不需要重試
+          break;
+        }
+
+        retryCount++;
+        if (retryCount < maxRetries) {
+          // 等待一段時間後重試
+          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+          continue;
+        }
       }
-      if (airtableError.statusCode) {
-        console.error('狀態碼:', airtableError.statusCode);
-      }
-      if (airtableError.error) {
-        console.error('錯誤類型:', airtableError.error);
-      }
-      // 不拋出錯誤，讓操作繼續進行
-      console.warn('活動記錄失敗，但操作將繼續進行');
     }
+
+    // 如果所有重試都失敗，記錄警告但不中斷操作
+    console.warn('活動記錄失敗，但操作將繼續進行');
   }
 
   // 獲取每日統計
@@ -143,35 +158,51 @@ export class AirtableService {
 
   // 獲取用戶統計
   async getUserStats(): Promise<UserStats[]> {
-    try {
-      console.log('開始獲取用戶統計');
-      const records = await this.base('User_Stats')
-        .select({
-          sort: [{ field: 'last_login', direction: 'desc' }],
-          maxRecords: 10
-        })
-        .all();
+    const maxRetries = 3;
+    let retryCount = 0;
 
-      console.log('成功獲取用戶統計記錄:', records.length, '條');
-      return records.map(record => ({
-        email: record.get('email') as string,
-        lastLogin: record.get('last_login') as string,
-        loginCount: record.get('login_count') as number || 0
-      }));
-    } catch (error) {
-      const airtableError = error as AirtableError;
-      console.error('獲取用戶統計失敗，完整錯誤:', airtableError);
-      if (airtableError.message) {
-        console.error('錯誤信息:', airtableError.message);
+    while (retryCount < maxRetries) {
+      try {
+        console.log(`嘗試獲取用戶統計 (第 ${retryCount + 1} 次)`);
+        const records = await this.base('User_Stats')
+          .select({
+            sort: [{ field: 'last_login', direction: 'desc' }],
+            maxRecords: 10
+          })
+          .all();
+
+        console.log('成功獲取用戶統計記錄:', records.length, '條');
+        return records.map(record => ({
+          email: record.get('email') as string,
+          lastLogin: record.get('last_login') as string,
+          loginCount: record.get('login_count') as number || 0
+        }));
+      } catch (error) {
+        const airtableError = error as AirtableError;
+        console.error(`獲取用戶統計失敗 (第 ${retryCount + 1} 次):`, {
+          error: airtableError.error,
+          message: airtableError.message,
+          statusCode: airtableError.statusCode
+        });
+
+        if (airtableError.statusCode === 403) {
+          console.error('權限錯誤，請檢查 API Key 權限設置');
+          // 如果是權限錯誤，不需要重試
+          break;
+        }
+
+        retryCount++;
+        if (retryCount < maxRetries) {
+          // 等待一段時間後重試
+          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+          continue;
+        }
       }
-      if (airtableError.statusCode) {
-        console.error('狀態碼:', airtableError.statusCode);
-      }
-      if (airtableError.error) {
-        console.error('錯誤類型:', airtableError.error);
-      }
-      return [];
     }
+
+    // 如果所有重試都失敗，返回空數組
+    console.warn('獲取用戶統計失敗，返回空數據');
+    return [];
   }
 
   // 獲取裝置統計
