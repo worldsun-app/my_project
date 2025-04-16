@@ -4,12 +4,13 @@ import Airtable from 'airtable';
 export interface DailyStats {
   date: string;
   downloads: number;
-  logins: number;
+  views: number;
 }
 
 export interface FileStats {
   fileName: string;
   downloadCount: number;
+  viewCount: number;
   lastDownloaded: string;
 }
 
@@ -178,18 +179,49 @@ export class AirtableService {
   // 獲取每日統計
   async getDailyStats(): Promise<DailyStats[]> {
     try {
-      const records = await this.base('Daily_Stats')
+      const today = new Date().toISOString().split('T')[0];
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
+
+      // 獲取過去30天的活動記錄
+      const activityRecords = await this.base('Activity_Logs')
         .select({
-          sort: [{ field: 'date', direction: 'desc' }],
-          maxRecords: 30
+          filterByFormula: `AND(
+            IS_AFTER({Timestamp}, '${thirtyDaysAgoStr}'),
+            IS_BEFORE({Timestamp}, '${today}T23:59:59')
+          )`
         })
         .all();
 
-      return records.map(record => ({
-        date: record.get('date') as string,
-        downloads: record.get('downloads') as number || 0,
-        logins: record.get('logins') as number || 0
-      }));
+      // 按日期分組統計
+      const dailyStats = new Map<string, { downloads: number, views: number }>();
+      
+      activityRecords.forEach(record => {
+        const timestamp = record.get('Timestamp') as string;
+        const date = timestamp.split('T')[0];
+        const action = record.get('Action') as string;
+        
+        if (!dailyStats.has(date)) {
+          dailyStats.set(date, { downloads: 0, views: 0 });
+        }
+        
+        const stats = dailyStats.get(date)!;
+        if (action === 'download') {
+          stats.downloads++;
+        } else if (action === 'view') {
+          stats.views++;
+        }
+      });
+
+      // 轉換為數組並排序
+      return Array.from(dailyStats.entries())
+        .map(([date, stats]) => ({
+          date,
+          downloads: stats.downloads,
+          views: stats.views
+        }))
+        .sort((a, b) => b.date.localeCompare(a.date));
     } catch (error) {
       console.error('獲取每日統計失敗:', error);
       return [];
@@ -199,37 +231,42 @@ export class AirtableService {
   // 獲取文件統計
   async getFileStats(): Promise<FileStats[]> {
     try {
+      // 先獲取所有文件統計記錄
       const records = await this.base('File_Stats')
         .select({
-          sort: [{ field: 'download_count', direction: 'desc' }],
-          maxRecords: 10
+          sort: [{ field: 'download_count', direction: 'desc' }]
         })
         .all();
 
-      return records.map(record => {
-        const fileName = record.get('file_name');
-        // 如果 fileName 是 JSON 字符串，嘗試解析它
-        let parsedFileName = fileName;
-        if (typeof fileName === 'string' && fileName.startsWith('{')) {
-          try {
-            const parsed = JSON.parse(fileName);
-            parsedFileName = parsed.fileName || parsed.fileId || fileName;
-          } catch (e) {
-            console.warn('解析文件名失敗:', e);
-          }
-        }
+      // 過濾和轉換數據
+      const fileStats = records
+        .filter(record => {
+          const fileName = record.get('file_name');
+          return fileName && typeof fileName === 'string';
+        })
+        .map(record => {
+          const lastDownloaded = record.get('last_downloaded');
+          const formattedDate = lastDownloaded ? 
+            new Date(lastDownloaded as string).toLocaleString('zh-TW', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit'
+            }) : '無記錄';
 
-        const lastDownloaded = record.get('last_downloaded');
-        // 確保日期格式正確
-        const formattedDate = typeof lastDownloaded === 'string' ? 
-          new Date(lastDownloaded).toLocaleString('zh-TW') : '無記錄';
+          return {
+            fileName: record.get('file_name') as string,
+            downloadCount: record.get('download_count') as number || 0,
+            viewCount: record.get('view_count') as number || 0,
+            lastDownloaded: formattedDate
+          };
+        })
+        .sort((a, b) => b.downloadCount - a.downloadCount)
+        .slice(0, 10); // 只返回前10個最熱門的文件
 
-        return {
-          fileName: parsedFileName as string,
-          downloadCount: record.get('download_count') as number || 0,
-          lastDownloaded: formattedDate
-        };
-      });
+      console.log('獲取到的文件統計:', fileStats);
+      return fileStats;
     } catch (error) {
       console.error('獲取文件統計失敗:', error);
       return [];
@@ -320,27 +357,47 @@ export class AirtableService {
   public async updateFileStats(fileName: string): Promise<void> {
     try {
       console.log('開始更新文件統計:', fileName);
+      
+      // 檢查文件名是否是 JSON 格式
+      let normalizedFileName = fileName;
+      if (fileName.startsWith('{')) {
+        try {
+          const parsed = JSON.parse(fileName);
+          normalizedFileName = parsed.fileName || parsed.fileId || fileName;
+        } catch (e) {
+          console.warn('解析文件名失敗:', e);
+        }
+      }
+
       const records = await this.base('File_Stats')
         .select({
-          filterByFormula: `{file_name} = '${fileName}'`
+          filterByFormula: `OR(
+            {file_name} = '${normalizedFileName}',
+            {file_name} = '${fileName}'
+          )`
         })
         .firstPage();
+
+      const now = new Date().toISOString();
 
       if (records.length > 0) {
         const record = records[0];
         const currentCount = (record.get('download_count') as number) || 0;
-        console.log('當前下載次數:', currentCount);
+        const currentViews = (record.get('view_count') as number) || 0;
+        
         await this.base('File_Stats').update(record.id, {
+          'file_name': normalizedFileName,
           'download_count': currentCount + 1,
-          'last_downloaded': new Date().toISOString()
+          'view_count': currentViews,
+          'last_downloaded': now
         });
         console.log('文件統計更新成功');
       } else {
-        console.log('創建新的文件統計記錄');
         await this.base('File_Stats').create({
-          'file_name': fileName,
+          'file_name': normalizedFileName,
           'download_count': 1,
-          'last_downloaded': new Date().toISOString()
+          'view_count': 0,
+          'last_downloaded': now
         });
         console.log('新的文件統計記錄創建成功');
       }
@@ -352,50 +409,8 @@ export class AirtableService {
 
   // 更新每日統計
   public async updateDailyStats(): Promise<void> {
-    try {
-      console.log('開始更新每日統計');
-      const today = new Date().toISOString().split('T')[0];
-      
-      // 獲取今天的活動記錄
-      const activityRecords = await this.base('Activity_Logs')
-        .select({
-          filterByFormula: `AND(
-            IS_SAME({Timestamp}, '${today}', 'day'),
-            OR(
-              {Action} = 'download',
-              {Action} = 'view'
-            )
-          )`
-        })
-        .all();
-
-      const downloadCount = activityRecords.length;
-      console.log(`今日下載總數: ${downloadCount}`);
-
-      const dailyRecords = await this.base('Daily_Stats')
-        .select({
-          filterByFormula: `{date} = '${today}'`
-        })
-        .firstPage();
-
-      if (dailyRecords.length > 0) {
-        const record = dailyRecords[0];
-        await this.base('Daily_Stats').update(record.id, {
-          'downloads': downloadCount
-        });
-        console.log('每日統計更新成功');
-      } else {
-        await this.base('Daily_Stats').create({
-          'date': today,
-          'downloads': downloadCount,
-          'logins': 0
-        });
-        console.log('新的每日統計記錄創建成功');
-      }
-    } catch (error) {
-      console.error('更新每日統計失敗:', error);
-      throw error;
-    }
+    // 這個方法保留但不執行任何操作
+    console.log('每日統計現在直接從活動記錄計算，不需要更新');
   }
 
   // 更新設備統計
