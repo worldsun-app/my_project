@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { analyticsService } from '../services/analyticsService';
+import { airtableService } from '../services/airtableService';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell
@@ -38,6 +39,14 @@ interface UserStats {
   lastLogin: string;
 }
 
+interface AdminStats {
+  dailyStats: DailyStats[];
+  fileStats: FileStats[];
+  userStats: UserStats[];
+  deviceStats: DeviceStats[];
+  browserStats: BrowserStats[];
+}
+
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
 const AdminStatsPage: React.FC = () => {
@@ -51,13 +60,13 @@ const AdminStatsPage: React.FC = () => {
   const [totalDownloads, setTotalDownloads] = useState(0);
   const [weeklyDownloads, setWeeklyDownloads] = useState(0);
   const [totalLogins, setTotalLogins] = useState(0);
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState<AdminStats | null>(null);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         // 測試所有表格的可訪問性
-        await analyticsService.testTableAccess();
+        await airtableService.testTableAccess();
         
         const stats = await analyticsService.getAdminStats();
         setStats(stats);
