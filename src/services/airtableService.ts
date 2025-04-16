@@ -369,11 +369,27 @@ export class AirtableService {
           return true;
         })
         .map(record => {
-          // 嘗試從 last_accessed 或 last_downloaded 獲取最後訪問時間
-          const lastAccessTime = record.fields.last_accessed as string | undefined || record.fields.last_downloaded as string | undefined;
+          // 嘗試從 last_accessed 獲取最後訪問時間
+          const lastAccessTime = record.fields.last_accessed as string | undefined;
           
-          // 格式化日期時間
-          const formattedDate = this.formatDateTime(lastAccessTime);
+          let formattedDate = '無日期資料';
+          if (lastAccessTime && typeof lastAccessTime === 'string') {
+            try {
+              const date = new Date(lastAccessTime);
+              if (!isNaN(date.getTime())) {
+                formattedDate = date.toLocaleString('zh-TW', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                });
+              }
+            } catch (error) {
+              console.error('日期格式化失敗:', error);
+            }
+          }
+
           console.log('日期格式化過程:', {
             originalTime: lastAccessTime,
             formattedDate: formattedDate,
@@ -384,7 +400,7 @@ export class AirtableService {
           return {
             fileName: record.fields.file_name as string,
             downloadCount: (record.fields.download_count as number) || 0,
-            lastDownloaded: formattedDate || '無日期資料'
+            lastDownloaded: formattedDate
           };
         });
 
