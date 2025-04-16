@@ -535,20 +535,32 @@ export class AirtableService {
       
       console.log('標準化後的文件名:', normalizedFileName);
 
-      // 使用 UTC 時間
-      const now = new Date().toISOString();
-      console.log('當前時間戳:', now);
+      // 使用台北時區的當前時間
+      const now = new Date();
+      // 轉換為 ISO 字符串並保留時區信息
+      const nowStr = now.toLocaleString('zh-TW', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+        timeZone: 'Asia/Taipei'
+      });
+      
+      console.log('當前時間戳:', nowStr);
 
       // 定義基本字段
       const baseFields = {
         'file_name': normalizedFileName,
         'download_count': 1,
-        'last_accessed': now
+        'last_accessed': nowStr
       };
 
       // 根據操作類型添加額外字段
       const fields = action === 'download' 
-        ? { ...baseFields, 'last_downloaded': now }
+        ? { ...baseFields, 'last_downloaded': nowStr }
         : baseFields;
 
       // 使用精確匹配查找記錄
@@ -562,16 +574,16 @@ export class AirtableService {
         const record = records[0];
         console.log('現有記錄:', record.fields);
         
-        const currentDownloads = ((record.fields.download_count as number) || 0) + 1;
+        const currentDownloads = ((record.get('download_count') as number) || 0) + 1;
         const updates = action === 'download'
           ? {
               'download_count': currentDownloads,
-              'last_accessed': now,
-              'last_downloaded': now
+              'last_accessed': nowStr,
+              'last_downloaded': nowStr
             }
           : {
               'download_count': currentDownloads,
-              'last_accessed': now
+              'last_accessed': nowStr
             };
 
         await this.base('File_Stats').update(record.id, updates);
