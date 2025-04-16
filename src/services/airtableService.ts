@@ -47,6 +47,7 @@ interface AirtableError {
   error: string;
   message: string;
   statusCode: number;
+  url?: string;
 }
 
 export class AirtableService {
@@ -56,6 +57,9 @@ export class AirtableService {
     this.base = new Airtable({
       apiKey: import.meta.env.VITE_AIRTABLE_API_KEY
     }).base(import.meta.env.VITE_AIRTABLE_BASE_ID);
+    
+    console.log('Airtable 服務初始化完成');
+    console.log('Base ID:', import.meta.env.VITE_AIRTABLE_BASE_ID);
   }
 
   // 記錄用戶活動
@@ -164,6 +168,11 @@ export class AirtableService {
     while (retryCount < maxRetries) {
       try {
         console.log(`嘗試獲取用戶統計 (第 ${retryCount + 1} 次)`);
+        console.log('查詢參數:', {
+          sort: [{ field: 'last_login', direction: 'desc' }],
+          maxRecords: 10
+        });
+        
         const records = await this.base('User_Stats')
           .select({
             sort: [{ field: 'last_login', direction: 'desc' }],
@@ -172,6 +181,12 @@ export class AirtableService {
           .all();
 
         console.log('成功獲取用戶統計記錄:', records.length, '條');
+        console.log('記錄示例:', records[0] ? {
+          email: records[0].get('email'),
+          lastLogin: records[0].get('last_login'),
+          loginCount: records[0].get('login_count')
+        } : '無記錄');
+
         return records.map(record => ({
           email: record.get('email') as string,
           lastLogin: record.get('last_login') as string,
@@ -182,25 +197,27 @@ export class AirtableService {
         console.error(`獲取用戶統計失敗 (第 ${retryCount + 1} 次):`, {
           error: airtableError.error,
           message: airtableError.message,
-          statusCode: airtableError.statusCode
+          statusCode: airtableError.statusCode,
+          url: airtableError.url
         });
 
         if (airtableError.statusCode === 403) {
           console.error('權限錯誤，請檢查 API Key 權限設置');
-          // 如果是權限錯誤，不需要重試
+          console.error('建議檢查：');
+          console.error('1. API Key 是否有對 User_Stats 表格的讀取權限');
+          console.error('2. 表格名稱是否正確（大小寫敏感）');
+          console.error('3. 欄位名稱是否正確（last_login, email, login_count）');
           break;
         }
 
         retryCount++;
         if (retryCount < maxRetries) {
-          // 等待一段時間後重試
           await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
           continue;
         }
       }
     }
 
-    // 如果所有重試都失敗，返回空數組
     console.warn('獲取用戶統計失敗，返回空數據');
     return [];
   }
