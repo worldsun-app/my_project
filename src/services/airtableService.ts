@@ -65,91 +65,64 @@ export class AirtableService {
 
   // 記錄用戶活動
   async logActivity(data: ActivityData): Promise<void> {
-    const maxRetries = 3;
-    let retryCount = 0;
+    try {
+      console.log('嘗試記錄活動:', {
+        'User ID': data.userId,
+        'User Email': data.userEmail,
+        'Action': data.action,
+        'Details': data.details,
+        'Timestamp': data.timestamp,
+        'Device Info': data.deviceInfo,
+        'Browser Info': data.browserInfo
+      });
+      
+      // 1. 記錄到 Activity_Logs
+      const result = await this.base('Activity_Logs').create({
+        'User ID': data.userId,
+        'User Email': data.userEmail,
+        'Action': data.action,
+        'Details': data.details,
+        'Timestamp': data.timestamp,
+        'Device Info': data.deviceInfo,
+        'Browser Info': data.browserInfo
+      });
+      
+      console.log('活動記錄成功:', result);
 
-    while (retryCount < maxRetries) {
-      try {
-        console.log(`嘗試記錄活動 (第 ${retryCount + 1} 次):`, {
-          'User ID': data.userId,
-          'User Email': data.userEmail,
-          'Action': data.action,
-          'Details': data.details,
-          'Timestamp': data.timestamp,
-          'Device Info': data.deviceInfo,
-          'Browser Info': data.browserInfo
-        });
+      // 2. 更新用戶統計
+      await this.updateUserStats(data.userEmail);
+
+      // 3. 更新文件統計
+      if (data.action === 'download' || data.action === 'file_open') {
+        let fileInfo: { fileName?: string } = {};
         
-        // 1. 記錄到 Activity_Logs
-        const result = await this.base('Activity_Logs').create({
-          'User ID': data.userId,
-          'User Email': data.userEmail,
-          'Action': data.action,
-          'Details': data.details,
-          'Timestamp': data.timestamp,
-          'Device Info': data.deviceInfo,
-          'Browser Info': data.browserInfo
-        });
-        
-        console.log('活動記錄成功:', result);
-
-        // 2. 更新用戶統計
-        await this.updateUserStats(data.userEmail);
-
-        // 3. 更新文件統計
-        if (data.action === 'download' || data.action === 'file_open') {
-          let fileInfo: { fileName?: string } = {};
-          
-          try {
-            // 嘗試解析 details 中的文件信息
-            fileInfo = JSON.parse(data.details);
-          } catch (e) {
-            console.warn('解析文件信息失敗:', e);
-            // 如果解析失敗，嘗試直接使用 details
-            fileInfo = { fileName: data.details };
-          }
-
-          if (fileInfo.fileName) {
-            await this.updateFileStats(fileInfo.fileName, data.action);
-          }
+        try {
+          // 嘗試解析 details 中的文件信息
+          fileInfo = JSON.parse(data.details);
+        } catch (e) {
+          console.warn('解析文件信息失敗:', e);
+          // 如果解析失敗，嘗試直接使用 details
+          fileInfo = { fileName: data.details };
         }
 
-        // 4. 更新每日統計
-        await this.updateDailyStats();
-
-        // 5. 更新設備統計
-        if (data.deviceInfo) {
-          await this.updateDeviceStats(data.deviceInfo);
-        }
-
-        // 6. 更新瀏覽器統計
-        if (data.browserInfo) {
-          await this.updateBrowserStats(data.browserInfo);
-        }
-
-        return;
-      } catch (error) {
-        const airtableError = error as AirtableError;
-        console.error(`記錄活動失敗 (第 ${retryCount + 1} 次):`, {
-          error: airtableError.error,
-          message: airtableError.message,
-          statusCode: airtableError.statusCode
-        });
-
-        if (airtableError.statusCode === 403) {
-          console.error('權限錯誤，請檢查 API Key 權限設置');
-          break;
-        }
-
-        retryCount++;
-        if (retryCount < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
-          continue;
+        if (fileInfo.fileName) {
+          await this.updateFileStats(fileInfo.fileName, data.action);
         }
       }
-    }
 
-    console.warn('活動記錄失敗，但操作將繼續進行');
+      // 4. 更新設備統計
+      if (data.deviceInfo) {
+        await this.updateDeviceStats(data.deviceInfo);
+      }
+
+      // 5. 更新瀏覽器統計
+      if (data.browserInfo) {
+        await this.updateBrowserStats(data.browserInfo);
+      }
+    } catch (error) {
+      console.error('記錄活動失敗:', error);
+      throw error;
+    }
   }
 
   // 更新用戶統計
