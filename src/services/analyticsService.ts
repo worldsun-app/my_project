@@ -1,4 +1,4 @@
-import { airtableService } from './airtableService';
+import { airtableService, ActivityData } from './airtableService';
 import { auth } from '../firebase';
 
 interface AirtableRecord {
@@ -45,21 +45,11 @@ export class AnalyticsService {
   async logActivity(data: ActivityData): Promise<void> {
     try {
       console.log('開始記錄活動:', data);
-      const result = await airtableService.logActivity(data);
-      console.log('活動記錄成功:', result);
-
-      // 如果是文件操作，更新文件統計
-      if (data.action.includes('file')) {
-        console.log('更新文件統計:', data.details);
-        await airtableService.updateFileStats(data.details);
-      }
-
-      // 更新每日統計
-      console.log('更新每日統計');
-      await airtableService.updateDailyStats();
+      await airtableService.logActivity(data).catch(error => {
+        console.warn('記錄活動失敗（非阻塞）:', error);
+      });
     } catch (error) {
-      console.error('記錄活動失敗:', error);
-      throw error;
+      console.warn('記錄活動時發生錯誤（非阻塞）:', error);
     }
   }
 
