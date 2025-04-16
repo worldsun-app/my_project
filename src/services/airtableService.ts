@@ -71,19 +71,17 @@ export class AirtableService {
         'Browser Info': data.browserInfo
       });
       
-      await this.base('Activity_Logs').create([
-        {
-          fields: {
-            'User ID': data.userId,
-            'User Email': data.userEmail,
-            'Action': data.action,
-            'Details': data.details,
-            'Timestamp': data.timestamp,
-            'Device Info': data.deviceInfo,
-            'Browser Info': data.browserInfo
-          }
-        }
-      ]);
+      const result = await this.base('Activity_Logs').create({
+        'User ID': data.userId,
+        'User Email': data.userEmail,
+        'Action': data.action,
+        'Details': data.details,
+        'Timestamp': data.timestamp,
+        'Device Info': data.deviceInfo,
+        'Browser Info': data.browserInfo
+      });
+      
+      console.log('活動記錄成功:', result);
     } catch (error) {
       const airtableError = error as AirtableError;
       console.error('記錄活動失敗，完整錯誤:', airtableError);
@@ -96,7 +94,8 @@ export class AirtableService {
       if (airtableError.error) {
         console.error('錯誤類型:', airtableError.error);
       }
-      throw error;
+      // 不拋出錯誤，讓操作繼續進行
+      console.warn('活動記錄失敗，但操作將繼續進行');
     }
   }
 
@@ -145,6 +144,7 @@ export class AirtableService {
   // 獲取用戶統計
   async getUserStats(): Promise<UserStats[]> {
     try {
+      console.log('開始獲取用戶統計');
       const records = await this.base('User_Stats')
         .select({
           sort: [{ field: 'last_login', direction: 'desc' }],
@@ -152,13 +152,24 @@ export class AirtableService {
         })
         .all();
 
+      console.log('成功獲取用戶統計記錄:', records.length, '條');
       return records.map(record => ({
         email: record.get('email') as string,
         lastLogin: record.get('last_login') as string,
         loginCount: record.get('login_count') as number || 0
       }));
     } catch (error) {
-      console.error('獲取用戶統計失敗:', error);
+      const airtableError = error as AirtableError;
+      console.error('獲取用戶統計失敗，完整錯誤:', airtableError);
+      if (airtableError.message) {
+        console.error('錯誤信息:', airtableError.message);
+      }
+      if (airtableError.statusCode) {
+        console.error('狀態碼:', airtableError.statusCode);
+      }
+      if (airtableError.error) {
+        console.error('錯誤類型:', airtableError.error);
+      }
       return [];
     }
   }
