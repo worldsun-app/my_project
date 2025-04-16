@@ -10,7 +10,6 @@ export interface DailyStats {
 export interface FileStats {
   fileName: string;
   downloadCount: number;
-  viewCount: number;
   lastDownloaded: string;
 }
 
@@ -237,9 +236,9 @@ export class AirtableService {
           return fileName && typeof fileName === 'string';
         })
         .map(record => {
-          const lastDownloaded = record.get('last_downloaded') || record.get('last_accessed');
-          const formattedDate = lastDownloaded ? 
-            new Date(lastDownloaded as string).toLocaleString('zh-TW', {
+          const lastAccessed = record.get('last_accessed');
+          const formattedDate = lastAccessed ? 
+            new Date(lastAccessed as string).toLocaleString('zh-TW', {
               year: 'numeric',
               month: '2-digit',
               day: '2-digit',
@@ -250,7 +249,6 @@ export class AirtableService {
           return {
             fileName: record.get('file_name') as string,
             downloadCount: record.get('download_count') as number || 0,
-            viewCount: record.get('view_count') as number || 0,
             lastDownloaded: formattedDate
           };
         });
@@ -275,12 +273,21 @@ export class AirtableService {
 
       return records.map(record => {
         const lastLogin = record.get('last_login');
-        // 確保日期格式正確
-        const formattedDate = typeof lastLogin === 'string' ? 
-          new Date(lastLogin).toLocaleString('zh-TW') : '無記錄';
+        const formattedDate = lastLogin ? 
+          new Date(lastLogin as string).toLocaleString('zh-TW', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          }) : '無記錄';
+
+        const email = record.get('email') as string;
+        // 只顯示郵箱的用戶名部分
+        const displayName = email.split('@')[0];
 
         return {
-          email: record.get('email') as string,
+          email: displayName,
           lastLogin: formattedDate,
           loginCount: record.get('login_count') as number || 0
         };
@@ -369,17 +376,12 @@ export class AirtableService {
       console.log('標準化後的文件名:', normalizedFileName);
 
       const now = new Date().toISOString();
-      const fields = action === 'download' ? {
+      // 統一處理 file_open 和 download 為同一種訪問
+      const fields = {
         'file_name': normalizedFileName,
         'download_count': 1,
-        'view_count': 0,
         'last_accessed': now,
         'last_downloaded': now
-      } : {
-        'file_name': normalizedFileName,
-        'download_count': 0,
-        'view_count': 1,
-        'last_accessed': now
       };
 
       // 使用精確匹配查找記錄
@@ -391,14 +393,13 @@ export class AirtableService {
 
       if (records.length > 0) {
         const record = records[0];
-        const updates = { ...fields };
+        const currentDownloads = ((record.get('download_count') as number) || 0) + 1;
         
-        // 更新計數
-        if (action === 'download') {
-          updates.download_count = ((record.get('download_count') as number) || 0) + 1;
-        } else {
-          updates.view_count = ((record.get('view_count') as number) || 0) + 1;
-        }
+        const updates = {
+          'download_count': currentDownloads,
+          'last_accessed': now,
+          'last_downloaded': now
+        };
 
         // 更新記錄
         await this.base('File_Stats').update(record.id, updates);
