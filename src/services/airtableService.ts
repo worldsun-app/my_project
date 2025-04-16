@@ -47,6 +47,7 @@ interface AirtableError {
   message: string;
   statusCode: number;
   url?: string;
+  type?: string;
 }
 
 export class AirtableService {
@@ -279,27 +280,32 @@ export class AirtableService {
         })
         .all();
 
-      return records.map(record => {
-        const lastLogin = record.get('last_login');
-        const formattedDate = lastLogin ? 
-          new Date(lastLogin as string).toLocaleString('zh-TW', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-          }) : '無記錄';
+      return records
+        .filter(record => {
+          const email = record.get('email');
+          return email && typeof email === 'string';
+        })
+        .map(record => {
+          const lastLogin = record.get('last_login');
+          const formattedDate = lastLogin ? 
+            new Date(lastLogin as string).toLocaleString('zh-TW', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit'
+            }) : '無記錄';
 
-        const email = record.get('email') as string;
-        // 只顯示郵箱的用戶名部分
-        const displayName = email.split('@')[0];
+          const email = record.get('email') as string;
+          // 只顯示郵箱的用戶名部分
+          const displayName = email.includes('@') ? email.split('@')[0] : email;
 
-        return {
-          email: displayName,
-          lastLogin: formattedDate,
-          loginCount: record.get('login_count') as number || 0
-        };
-      });
+          return {
+            email: displayName,
+            lastLogin: formattedDate,
+            loginCount: record.get('login_count') as number || 0
+          };
+        });
     } catch (error) {
       console.error('獲取用戶統計失敗:', error);
       return [];
@@ -524,19 +530,53 @@ export class AirtableService {
         
         console.log(`表格 ${table} 可訪問，記錄數: ${records.length}`);
         if (records.length > 0) {
-          console.log(`表格 ${table} 示例記錄:`, records[0].fields);
+          const fields = records[0].fields;
+          const fieldNames = Object.keys(fields);
+          console.log(`表格 ${table} 字段列表:`, fieldNames);
+          
+          // 檢查必要字段
+          const requiredFields = this.getRequiredFields(table);
+          const missingFields = requiredFields.filter(field => !fieldNames.includes(field));
+          
+          if (missingFields.length > 0) {
+            console.warn(`表格 ${table} 缺少必要字段:`, missingFields);
+          }
+          
+          console.log(`表格 ${table} 示例記錄:`, fields);
         }
       } catch (error) {
         const airtableError = error as AirtableError;
         console.error(`表格 ${table} 訪問失敗:`, {
           error: airtableError.error,
           message: airtableError.message,
-          statusCode: airtableError.statusCode
+          statusCode: airtableError.statusCode,
+          type: airtableError.type,
+          fullError: error
         });
       }
     }
     
     console.log('表格可訪問性測試完成');
+  }
+
+  // 獲取表格必要字段
+  private getRequiredFields(table: string): string[] {
+    switch (table) {
+      case 'Activity_Logs':
+        return ['User ID', 'User Email', 'Action', 'Timestamp', 'Details'];
+      case 'User_Stats':
+        return ['email', 'login_count', 'last_login'];
+      case 'File_Stats':
+        return ['file_name', 'download_count', 'last_accessed', 'last_downloaded'];
+      case 'Device_Stats':
+        return ['device_type', 'count'];
+      case 'Browser_Stats':
+        return ['browser', 'count'];
+      case 'Admin_Users':
+        return ['email'];
+      default:
+        return [];
+    }
   }
 }
 
