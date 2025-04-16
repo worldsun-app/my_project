@@ -79,7 +79,7 @@ export class AirtableService {
           'Browser Info': data.browserInfo
         });
         
-        // 記錄到 Activity_Logs
+        // 1. 記錄到 Activity_Logs
         const result = await this.base('Activity_Logs').create({
           'User ID': data.userId,
           'User Email': data.userEmail,
@@ -92,12 +92,12 @@ export class AirtableService {
         
         console.log('活動記錄成功:', result);
 
-        // 如果是登入操作，更新用戶統計
+        // 2. 更新用戶統計
         if (data.action === 'login') {
           await this.updateUserStats(data.userEmail);
         }
 
-        // 如果是文件操作，更新文件統計
+        // 3. 更新文件統計
         if (data.action === 'download' || data.action === 'view') {
           const fileName = data.details.split(':')[1]?.trim();
           if (fileName) {
@@ -105,8 +105,18 @@ export class AirtableService {
           }
         }
 
-        // 更新每日統計
+        // 4. 更新每日統計
         await this.updateDailyStats();
+
+        // 5. 更新設備統計
+        if (data.deviceInfo) {
+          await this.updateDeviceStats(data.deviceInfo);
+        }
+
+        // 6. 更新瀏覽器統計
+        if (data.browserInfo) {
+          await this.updateBrowserStats(data.browserInfo);
+        }
 
         return;
       } catch (error) {
@@ -388,6 +398,64 @@ export class AirtableService {
     } catch (error) {
       console.error('更新每日統計失敗:', error);
       throw error;
+    }
+  }
+
+  // 更新設備統計
+  private async updateDeviceStats(deviceInfo: string): Promise<void> {
+    try {
+      console.log('開始更新設備統計:', deviceInfo);
+      const records = await this.base('Device_Stats')
+        .select({
+          filterByFormula: `{device_type} = '${deviceInfo}'`
+        })
+        .firstPage();
+
+      if (records.length > 0) {
+        const record = records[0];
+        const currentCount = (record.get('count') as number) || 0;
+        await this.base('Device_Stats').update(record.id, {
+          'count': currentCount + 1
+        });
+        console.log('設備統計更新成功');
+      } else {
+        await this.base('Device_Stats').create({
+          'device_type': deviceInfo,
+          'count': 1
+        });
+        console.log('新的設備統計記錄創建成功');
+      }
+    } catch (error) {
+      console.error('更新設備統計失敗:', error);
+    }
+  }
+
+  // 更新瀏覽器統計
+  private async updateBrowserStats(browserInfo: string): Promise<void> {
+    try {
+      console.log('開始更新瀏覽器統計:', browserInfo);
+      const records = await this.base('Browser_Stats')
+        .select({
+          filterByFormula: `{browser} = '${browserInfo}'`
+        })
+        .firstPage();
+
+      if (records.length > 0) {
+        const record = records[0];
+        const currentCount = (record.get('count') as number) || 0;
+        await this.base('Browser_Stats').update(record.id, {
+          'count': currentCount + 1
+        });
+        console.log('瀏覽器統計更新成功');
+      } else {
+        await this.base('Browser_Stats').create({
+          'browser': browserInfo,
+          'count': 1
+        });
+        console.log('新的瀏覽器統計記錄創建成功');
+      }
+    } catch (error) {
+      console.error('更新瀏覽器統計失敗:', error);
     }
   }
 
