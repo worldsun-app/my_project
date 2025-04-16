@@ -223,7 +223,7 @@ export class AirtableService {
           downloads: stats.downloads,
           views: 0  // 不再使用 views 統計
         }))
-        .sort((a, b) => b.date.localeCompare(a.date));
+        .sort((a, b) => a.date.localeCompare(b.date));
     } catch (error) {
       console.error('獲取每日統計失敗:', error);
       return [];
