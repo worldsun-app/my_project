@@ -361,7 +361,6 @@ export class AirtableService {
 
   // 更新文件統計
   public async updateFileStats(fileName: string, action: string): Promise<void> {
-    // 在函數開始時聲明變量
     let normalizedFileName = '';
     
     try {
@@ -378,17 +377,17 @@ export class AirtableService {
         }
       }
 
-      // 移除可能的引號和跳脫字符，並進行 URL 編碼
+      // 移除可能的引號和跳脫字符，並進行清理
       normalizedFileName = normalizedFileName
         .replace(/['"\\]/g, '')
         .trim();
       
       console.log('標準化後的文件名:', normalizedFileName);
 
-      // 使用 SEARCH 函數代替完全匹配
+      // 使用 FIND 函數代替 LOWER/TRIM，因為中文不需要大小寫比較
       const records = await this.base('File_Stats')
         .select({
-          filterByFormula: `LOWER(TRIM({file_name})) = LOWER("${normalizedFileName.replace(/"/g, '\\"')}")`,
+          filterByFormula: `FIND('${normalizedFileName.replace(/'/g, "\\'")}', {file_name}) > 0`,
           maxRecords: 1
         })
         .firstPage();
@@ -416,30 +415,46 @@ export class AirtableService {
         }
 
         // 只在必要時更新文件名
-        if (record.get('file_name') !== normalizedFileName) {
+        const existingFileName = record.get('file_name') as string;
+        if (existingFileName !== normalizedFileName) {
           updates['file_name'] = normalizedFileName;
         }
 
         if (Object.keys(updates).length > 0) {
-          await this.base('File_Stats').update(record.id, updates);
-          console.log('文件統計更新成功:', updates);
+          try {
+            await this.base('File_Stats').update(record.id, updates);
+            console.log('文件統計更新成功:', updates);
+          } catch (updateError) {
+            console.error('更新文件統計記錄失敗:', {
+              recordId: record.id,
+              updates,
+              error: updateError
+            });
+            throw updateError;
+          }
         } else {
           console.log('無需更新文件統計');
         }
       } else {
         // 創建新記錄
-        const newRecord = {
-          'file_name': normalizedFileName,
-          'download_count': action === 'download' ? 1 : 0,
-          'view_count': action === 'file_open' ? 1 : 0,
-          'last_accessed': now,
-          'last_downloaded': action === 'download' ? now : ''
-        };
-
-        const result = await this.base('File_Stats').create([
-          { fields: newRecord }
-        ]);
-        console.log('新的文件統計記錄創建成功:', result);
+        try {
+          const createResult = await this.base('File_Stats').create([{
+            fields: {
+              'file_name': normalizedFileName,
+              'download_count': action === 'download' ? 1 : 0,
+              'view_count': action === 'file_open' ? 1 : 0,
+              'last_accessed': now,
+              'last_downloaded': action === 'download' ? now : ''
+            }
+          }]);
+          console.log('新的文件統計記錄創建成功:', createResult);
+        } catch (createError) {
+          console.error('創建文件統計記錄失敗:', {
+            fileName: normalizedFileName,
+            error: createError
+          });
+          throw createError;
+        }
       }
     } catch (error) {
       console.error('更新文件統計失敗:', error);
@@ -449,7 +464,7 @@ export class AirtableService {
           originalFileName: fileName,
           processedFileName: normalizedFileName,
           action: action,
-          errorDetails: error
+          errorDetails: JSON.stringify(error, null, 2)
         });
       }
       throw error;
