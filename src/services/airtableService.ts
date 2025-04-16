@@ -230,6 +230,104 @@ export class AirtableService {
     }
   }
 
+  // 格式化日期時間
+  private formatDateTime(dateStr: string | undefined | null): string {
+    if (!dateStr) return '無記錄';
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return '無效日期';
+      
+      return date.toLocaleString('zh-TW', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZone: 'Asia/Taipei'
+      });
+    } catch (error) {
+      console.error('日期格式化失敗:', error);
+      return '無效日期';
+    }
+  }
+
+  // 測試表格可訪問性
+  async testTableAccess(): Promise<void> {
+    console.log('開始測試表格可訪問性...');
+    const tables = [
+      'Activity_Logs',
+      'User_Stats',
+      'File_Stats',
+      'Daily_Stats',
+      'Device_Stats',
+      'Browser_Stats',
+      'Admin_Users'
+    ];
+
+    for (const tableName of tables) {
+      try {
+        console.log(`測試表格 ${tableName}...`);
+        const table = this.base(tableName);
+        
+        // 獲取表格記錄
+        const records = await table.select({ maxRecords: 1 }).firstPage();
+        console.log(`表格 ${tableName} 可訪問，記錄數: ${records.length}`);
+
+        // 獲取並記錄字段信息
+        if (records.length > 0) {
+          const fields = records[0].fields;
+          const fieldNames = Object.keys(fields);
+          console.log(`表格 ${tableName} 字段列表:`, fieldNames);
+          console.log(`表格 ${tableName} 字段值示例:`, fields);
+        }
+
+        // 檢查必要字段
+        const requiredFields = this.getRequiredFields(tableName);
+        const missingFields = requiredFields.filter(field => {
+          const hasField = records.length > 0 && records[0].fields.hasOwnProperty(field);
+          if (!hasField) {
+            console.warn(`表格 ${tableName} 缺少字段: ${field}`);
+          }
+          return !hasField;
+        });
+
+        if (missingFields.length > 0) {
+          console.warn(`表格 ${tableName} 缺少必要字段:`, missingFields);
+        }
+
+        // 記錄示例數據
+        if (records.length > 0) {
+          const sampleRecord = records[0].fields;
+          console.log(`表格 ${tableName} 示例記錄:`, {
+            原始數據: sampleRecord,
+            字段類型: Object.entries(sampleRecord).reduce((acc, [key, value]) => {
+              acc[key] = typeof value;
+              return acc;
+            }, {} as Record<string, string>)
+          });
+        }
+      } catch (error) {
+        console.error(`測試表格 ${tableName} 失敗:`, error);
+      }
+    }
+    console.log('表格可訪問性測試完成');
+  }
+
+  // 獲取必要字段列表
+  private getRequiredFields(tableName: string): string[] {
+    const fieldMap: Record<string, string[]> = {
+      'Activity_Logs': ['action', 'user_email', 'timestamp', 'file_name'],
+      'User_Stats': ['email', 'login_count', 'last_login'],
+      'File_Stats': ['file_name', 'download_count', 'last_accessed', 'last_downloaded'],
+      'Daily_Stats': ['date', 'download_count'],
+      'Device_Stats': ['device_type', 'count'],
+      'Browser_Stats': ['browser', 'count'],
+      'Admin_Users': ['email']
+    };
+    return fieldMap[tableName] || [];
+  }
+
   // 獲取文件統計
   async getFileStats(): Promise<FileStats[]> {
     try {
@@ -239,30 +337,42 @@ export class AirtableService {
         })
         .all();
 
+      console.log('原始文件統計記錄:', records.map(record => ({
+        id: record.id,
+        fields: record.fields,
+        fieldTypes: Object.entries(record.fields).reduce((acc, [key, value]) => {
+          acc[key] = typeof value;
+          return acc;
+        }, {} as Record<string, string>)
+      })));
+
       const fileStats = records
         .filter(record => {
-          const fileName = record.get('file_name');
-          return fileName && typeof fileName === 'string';
+          const fileName = record.fields.file_name;
+          if (!fileName) {
+            console.warn('發現缺少文件名的記錄:', record.id);
+            return false;
+          }
+          return true;
         })
         .map(record => {
-          const lastAccessed = record.get('last_accessed');
-          const formattedDate = lastAccessed ? 
-            new Date(lastAccessed as string).toLocaleString('zh-TW', {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit'
-            }) : '無記錄';
+          const lastAccessed = record.fields.last_accessed;
+          console.log('文件訪問時間處理:', {
+            recordId: record.id,
+            fileName: record.fields.file_name,
+            lastAccessed,
+            lastAccessedType: typeof lastAccessed,
+            downloadCount: record.fields.download_count
+          });
 
           return {
-            fileName: record.get('file_name') as string,
-            downloadCount: record.get('download_count') as number || 0,
-            lastDownloaded: formattedDate
+            fileName: record.fields.file_name as string,
+            downloadCount: (record.fields.download_count as number) || 0,
+            lastDownloaded: this.formatDateTime(record.fields.last_accessed as string)
           };
         });
 
-      console.log('獲取到的文件統計:', fileStats);
+      console.log('處理後的文件統計:', fileStats);
       return fileStats;
     } catch (error) {
       console.error('獲取文件統計失敗:', error);
@@ -280,6 +390,8 @@ export class AirtableService {
         })
         .all();
 
+      console.log('原始用戶統計記錄:', records.map(r => r.fields));
+
       return records
         .filter(record => {
           const email = record.get('email');
@@ -287,22 +399,18 @@ export class AirtableService {
         })
         .map(record => {
           const lastLogin = record.get('last_login');
-          const formattedDate = lastLogin ? 
-            new Date(lastLogin as string).toLocaleString('zh-TW', {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit'
-            }) : '無記錄';
+          console.log('用戶登入時間原始值:', {
+            email: record.get('email'),
+            lastLogin,
+            type: typeof lastLogin
+          });
 
           const email = record.get('email') as string;
-          // 只顯示郵箱的用戶名部分
           const displayName = email.includes('@') ? email.split('@')[0] : email;
 
           return {
             email: displayName,
-            lastLogin: formattedDate,
+            lastLogin: this.formatDateTime(lastLogin as string),
             loginCount: record.get('login_count') as number || 0
           };
         });
@@ -379,18 +487,18 @@ export class AirtableService {
             const parsed = JSON.parse(fileName);
             normalizedFileName = parsed.fileName || parsed.fileId || fileName;
           } catch {
-            // 如果解析失敗，使用原始文件名
             normalizedFileName = fileName;
           }
         }
-        // 移除可能的引號和跳脫字符，並進行清理
         normalizedFileName = normalizedFileName.replace(/['"\\]/g, '').trim();
       }
       
       console.log('標準化後的文件名:', normalizedFileName);
 
+      // 使用 UTC 時間
       const now = new Date().toISOString();
-      // 統一處理 file_open 和 download 為同一種訪問
+      console.log('當前時間戳:', now);
+
       const fields = {
         'file_name': normalizedFileName,
         'download_count': 1,
@@ -407,19 +515,18 @@ export class AirtableService {
 
       if (records.length > 0) {
         const record = records[0];
-        const currentDownloads = ((record.get('download_count') as number) || 0) + 1;
+        console.log('現有記錄:', record.fields);
         
+        const currentDownloads = ((record.fields.download_count as number) || 0) + 1;
         const updates = {
           'download_count': currentDownloads,
           'last_accessed': now,
           'last_downloaded': now
         };
 
-        // 更新記錄
         await this.base('File_Stats').update(record.id, updates);
         console.log('文件統計更新成功:', updates);
       } else {
-        // 創建新記錄
         const createResult = await this.base('File_Stats').create([{ fields }]);
         console.log('新的文件統計記錄創建成功:', createResult);
       }
@@ -502,80 +609,6 @@ export class AirtableService {
       }
     } catch (error) {
       console.error('更新瀏覽器統計失敗:', error);
-    }
-  }
-
-  // 測試所有表格的可訪問性
-  async testTableAccess(): Promise<void> {
-    const tables = [
-      'Activity_Logs',
-      'User_Stats',
-      'File_Stats',
-      'Daily_Stats',
-      'Device_Stats',
-      'Browser_Stats',
-      'Admin_Users'
-    ];
-
-    console.log('開始測試表格可訪問性...');
-    
-    for (const table of tables) {
-      try {
-        console.log(`測試表格 ${table}...`);
-        const records = await this.base(table)
-          .select({
-            maxRecords: 1
-          })
-          .all();
-        
-        console.log(`表格 ${table} 可訪問，記錄數: ${records.length}`);
-        if (records.length > 0) {
-          const fields = records[0].fields;
-          const fieldNames = Object.keys(fields);
-          console.log(`表格 ${table} 字段列表:`, fieldNames);
-          
-          // 檢查必要字段
-          const requiredFields = this.getRequiredFields(table);
-          const missingFields = requiredFields.filter(field => !fieldNames.includes(field));
-          
-          if (missingFields.length > 0) {
-            console.warn(`表格 ${table} 缺少必要字段:`, missingFields);
-          }
-          
-          console.log(`表格 ${table} 示例記錄:`, fields);
-        }
-      } catch (error) {
-        const airtableError = error as AirtableError;
-        console.error(`表格 ${table} 訪問失敗:`, {
-          error: airtableError.error,
-          message: airtableError.message,
-          statusCode: airtableError.statusCode,
-          type: airtableError.type,
-          fullError: error
-        });
-      }
-    }
-    
-    console.log('表格可訪問性測試完成');
-  }
-
-  // 獲取表格必要字段
-  private getRequiredFields(table: string): string[] {
-    switch (table) {
-      case 'Activity_Logs':
-        return ['User ID', 'User Email', 'Action', 'Timestamp', 'Details'];
-      case 'User_Stats':
-        return ['email', 'login_count', 'last_login'];
-      case 'File_Stats':
-        return ['file_name', 'download_count', 'last_accessed', 'last_downloaded'];
-      case 'Device_Stats':
-        return ['device_type', 'count'];
-      case 'Browser_Stats':
-        return ['browser', 'count'];
-      case 'Admin_Users':
-        return ['email'];
-      default:
-        return [];
     }
   }
 }
