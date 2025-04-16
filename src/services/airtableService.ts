@@ -383,13 +383,22 @@ export class AirtableService {
             fileName: record.fields.file_name,
             lastAccessed,
             lastAccessedType: typeof lastAccessed,
-            isValidDate: this.isValidDateString(lastAccessed)
+            isValidDate: this.isValidDateString(lastAccessed),
+            rawFields: record.fields
           });
+
+          // 嘗試從 last_accessed 或 last_downloaded 獲取最後訪問時間
+          let lastAccessTime = '';
+          if (typeof record.fields.last_accessed === 'string') {
+            lastAccessTime = record.fields.last_accessed;
+          } else if (typeof record.fields.last_downloaded === 'string') {
+            lastAccessTime = record.fields.last_downloaded;
+          }
 
           return {
             fileName: record.fields.file_name as string,
             downloadCount: (record.fields.download_count as number) || 0,
-            lastDownloaded: this.formatDateTime(record.fields.last_accessed as string)
+            lastDownloaded: this.formatDateTime(lastAccessTime)
           };
         });
 
@@ -520,12 +529,17 @@ export class AirtableService {
       const now = new Date().toISOString();
       console.log('當前時間戳:', now);
 
-      const fields = {
+      // 定義基本字段
+      const baseFields = {
         'file_name': normalizedFileName,
         'download_count': 1,
-        'last_accessed': now,
-        'last_downloaded': now
+        'last_accessed': now
       };
+
+      // 根據操作類型添加額外字段
+      const fields = action === 'download' 
+        ? { ...baseFields, 'last_downloaded': now }
+        : baseFields;
 
       // 使用精確匹配查找記錄
       const records = await this.base('File_Stats')
@@ -539,11 +553,16 @@ export class AirtableService {
         console.log('現有記錄:', record.fields);
         
         const currentDownloads = ((record.fields.download_count as number) || 0) + 1;
-        const updates = {
-          'download_count': currentDownloads,
-          'last_accessed': now,
-          'last_downloaded': now
-        };
+        const updates = action === 'download'
+          ? {
+              'download_count': currentDownloads,
+              'last_accessed': now,
+              'last_downloaded': now
+            }
+          : {
+              'download_count': currentDownloads,
+              'last_accessed': now
+            };
 
         await this.base('File_Stats').update(record.id, updates);
         console.log('文件統計更新成功:', updates);
