@@ -51,6 +51,23 @@ const AdminStatsPage: React.FC = () => {
   const [totalDownloads, setTotalDownloads] = useState(0);
   const [weeklyDownloads, setWeeklyDownloads] = useState(0);
   const [totalLogins, setTotalLogins] = useState(0);
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        // 測試所有表格的可訪問性
+        await analyticsService.testTableAccess();
+        
+        const stats = await analyticsService.getAdminStats();
+        setStats(stats);
+      } catch (error) {
+        console.error('獲取統計數據失敗:', error);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   useEffect(() => {
     const loadStats = async () => {

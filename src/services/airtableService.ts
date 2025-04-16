@@ -341,6 +341,46 @@ export class AirtableService {
       throw error;
     }
   }
+
+  // 測試所有表格的可訪問性
+  async testTableAccess(): Promise<void> {
+    const tables = [
+      'Activity_Logs',
+      'User_Stats',
+      'File_Stats',
+      'Daily_Stats',
+      'Device_Stats',
+      'Browser_Stats',
+      'Admin_Users'
+    ];
+
+    console.log('開始測試表格可訪問性...');
+    
+    for (const table of tables) {
+      try {
+        console.log(`測試表格 ${table}...`);
+        const records = await this.base(table)
+          .select({
+            maxRecords: 1
+          })
+          .all();
+        
+        console.log(`表格 ${table} 可訪問，記錄數: ${records.length}`);
+        if (records.length > 0) {
+          console.log(`表格 ${table} 示例記錄:`, records[0].fields);
+        }
+      } catch (error) {
+        const airtableError = error as AirtableError;
+        console.error(`表格 ${table} 訪問失敗:`, {
+          error: airtableError.error,
+          message: airtableError.message,
+          statusCode: airtableError.statusCode
+        });
+      }
+    }
+    
+    console.log('表格可訪問性測試完成');
+  }
 }
 
 // 導出單例實例
