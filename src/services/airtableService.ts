@@ -4,7 +4,6 @@ import Airtable from 'airtable';
 export interface DailyStats {
   date: string;
   downloads: number;
-  views: number;
 }
 
 export interface FileStats {
@@ -172,38 +171,47 @@ export class AirtableService {
   // 獲取每日統計
   async getDailyStats(): Promise<DailyStats[]> {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      // 使用當地時間計算日期範圍
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);
+      
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
+      thirtyDaysAgo.setHours(0, 0, 0, 0);
 
       // 獲取過去30天的活動記錄
       const activityRecords = await this.base('Activity_Logs')
         .select({
           filterByFormula: `AND(
-            IS_AFTER({Timestamp}, '${thirtyDaysAgoStr}'),
-            IS_BEFORE({Timestamp}, '${today}T23:59:59')
-          )`
+            IS_AFTER({Timestamp}, '${thirtyDaysAgo.toISOString()}'),
+            IS_BEFORE({Timestamp}, '${today.toISOString()}')
+          )`,
+          sort: [{ field: 'Timestamp', direction: 'desc' }]
         })
         .all();
 
       // 按日期分組統計
       const dailyStats = new Map<string, { downloads: number, views: number }>();
       
+      // 初始化過去30天的所有日期
+      for (let i = 0; i < 30; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        dailyStats.set(dateStr, { downloads: 0, views: 0 });
+      }
+      
+      // 統計活動記錄
       activityRecords.forEach(record => {
         const timestamp = record.get('Timestamp') as string;
         const date = timestamp.split('T')[0];
         const action = record.get('Action') as string;
         
-        if (!dailyStats.has(date)) {
-          dailyStats.set(date, { downloads: 0, views: 0 });
-        }
-        
-        const stats = dailyStats.get(date)!;
-        if (action === 'download') {
-          stats.downloads++;
-        } else if (action === 'view') {
-          stats.views++;
+        const stats = dailyStats.get(date);
+        if (stats) {
+          if (action === 'download' || action === 'file_open') {
+            stats.downloads++;
+          }
         }
       });
 
@@ -212,7 +220,7 @@ export class AirtableService {
         .map(([date, stats]) => ({
           date,
           downloads: stats.downloads,
-          views: stats.views
+          views: 0  // 不再使用 views 統計
         }))
         .sort((a, b) => b.date.localeCompare(a.date));
     } catch (error) {
