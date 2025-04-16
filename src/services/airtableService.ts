@@ -384,11 +384,10 @@ export class AirtableService {
       
       console.log('標準化後的文件名:', normalizedFileName);
 
-      // 使用 FIND 函數代替 LOWER/TRIM，因為中文不需要大小寫比較
+      // 使用精確匹配而不是 FIND 函數
       const records = await this.base('File_Stats')
         .select({
-          filterByFormula: `FIND('${normalizedFileName.replace(/'/g, "\\'")}', {file_name}) > 0`,
-          maxRecords: 1
+          filterByFormula: `{file_name} = '${normalizedFileName.replace(/'/g, "\\'")}'`
         })
         .firstPage();
 
@@ -438,20 +437,30 @@ export class AirtableService {
       } else {
         // 創建新記錄
         try {
-          const createResult = await this.base('File_Stats').create([{
-            fields: {
-              'file_name': normalizedFileName,
-              'download_count': action === 'download' ? 1 : 0,
-              'view_count': action === 'file_open' ? 1 : 0,
-              'last_accessed': now,
-              'last_downloaded': action === 'download' ? now : ''
-            }
-          }]);
+          // 使用正確的 Airtable API 格式
+          const fields = {
+            'file_name': normalizedFileName,
+            'download_count': action === 'download' ? 1 : 0,
+            'view_count': action === 'file_open' ? 1 : 0,
+            'last_accessed': now,
+            'last_downloaded': action === 'download' ? now : ''
+          };
+
+          console.log('準備創建新記錄:', fields);
+
+          const createResult = await this.base('File_Stats').create([
+            { fields }
+          ]);
+
           console.log('新的文件統計記錄創建成功:', createResult);
         } catch (createError) {
+          const airtableError = createError as AirtableError;
           console.error('創建文件統計記錄失敗:', {
             fileName: normalizedFileName,
-            error: createError
+            error: airtableError,
+            statusCode: airtableError.statusCode,
+            message: airtableError.message,
+            url: airtableError.url
           });
           throw createError;
         }
@@ -460,11 +469,15 @@ export class AirtableService {
       console.error('更新文件統計失敗:', error);
       // 記錄更詳細的錯誤信息
       if ((error as AirtableError).statusCode === 422) {
+        const airtableError = error as AirtableError;
         console.error('請求格式錯誤，詳細信息:', {
           originalFileName: fileName,
           processedFileName: normalizedFileName,
           action: action,
-          errorDetails: JSON.stringify(error, null, 2)
+          statusCode: airtableError.statusCode,
+          message: airtableError.message,
+          url: airtableError.url,
+          error: airtableError.error
         });
       }
       throw error;
