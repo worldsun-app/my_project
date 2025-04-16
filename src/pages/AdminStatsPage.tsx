@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import { analyticsService } from '../services/analyticsService';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -31,41 +30,16 @@ interface BrowserStats {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
 const AdminStatsPage: React.FC = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([]);
   const [fileStats, setFileStats] = useState<FileStats[]>([]);
   const [deviceStats, setDeviceStats] = useState<DeviceStats[]>([]);
   const [browserStats, setBrowserStats] = useState<BrowserStats[]>([]);
 
   useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (!user?.email) {
-        navigate('/');
-        return;
-      }
-
-      try {
-        const isUserAdmin = await analyticsService.isAdmin(user.email);
-        if (!isUserAdmin) {
-          navigate('/');
-          return;
-        }
-
-        setIsAdmin(true);
-        await loadStats();
-      } catch (error) {
-        console.error('Error checking admin status:', error);
-        navigate('/');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAdminStatus();
-  }, [user, navigate]);
+    loadStats();
+  }, []);
 
   const loadStats = async () => {
     try {
@@ -86,6 +60,8 @@ const AdminStatsPage: React.FC = () => {
       setBrowserStats(browserData);
     } catch (error) {
       console.error('Error loading stats:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -100,14 +76,18 @@ const AdminStatsPage: React.FC = () => {
     );
   }
 
-  if (!isAdmin) {
-    return null;
-  }
-
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">管理員統計</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">管理員統計</h1>
+          <button
+            onClick={() => navigate('/')}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            返回主頁
+          </button>
+        </div>
         
         {/* 每日訪問統計 */}
         <div className="bg-white rounded-lg shadow p-6 mb-8">
