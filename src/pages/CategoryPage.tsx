@@ -144,8 +144,20 @@ const CategoryPage: React.FC = () => {
           browserInfo: navigator.userAgent
         });
 
-        // 直接在新視窗中打開文件
-        window.open(downloadUrl, '_blank');
+        // 在新視窗中打開文件
+        const newWindow = window.open('about:blank', '_blank');
+        if (newWindow) {
+          newWindow.location.href = downloadUrl;
+        } else {
+          // 如果彈窗被阻擋，使用備用方法
+          const link = document.createElement('a');
+          link.href = downloadUrl;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
       } catch (error) {
         console.error('下載文件時發生錯誤:', error);
       }
