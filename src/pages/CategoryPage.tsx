@@ -144,12 +144,22 @@ const CategoryPage: React.FC = () => {
           browserInfo: navigator.userAgent
         });
 
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.download = file.name;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // 檢查URL是否為PDF
+        const isPDF = downloadUrl.toLowerCase().includes('.pdf');
+        
+        if (isPDF) {
+          // PDF文件：在新視窗中打開
+          window.open(downloadUrl + '#zoom=100', '_blank');
+        } else {
+          // 其他文件：直接下載
+          const link = document.createElement('a');
+          link.href = downloadUrl;
+          link.download = file.name; // 設置下載的文件名
+          link.target = '_blank';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
       } catch (error) {
         console.error('下載文件時發生錯誤:', error);
       }
