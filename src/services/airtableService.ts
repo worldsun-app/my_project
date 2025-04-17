@@ -547,18 +547,6 @@ export class AirtableService {
         iso: nowISO
       });
 
-      // 定義基本字段（使用正確的字段名稱）
-      const baseFields = {
-        'file_name': normalizedFileName,
-        'download_count': 1,
-        'last_accessed': nowISO
-      };
-
-      // 根據操作類型添加額外字段
-      const fields = action === 'download' 
-        ? { ...baseFields, 'last_downloaded': nowISO }
-        : baseFields;
-
       // 使用精確匹配查找記錄
       const records = await this.base('File_Stats')
         .select({
@@ -571,28 +559,35 @@ export class AirtableService {
         console.log('現有記錄:', record.fields);
         
         const currentDownloads = ((record.get('download_count') as number) || 0) + 1;
-        const updates = action === 'download'
-          ? {
-              'download_count': currentDownloads,
-              'last_accessed': nowISO,
-              'last_downloaded': nowISO
-            }
-          : {
-              'download_count': currentDownloads,
-              'last_accessed': nowISO
-            };
-
-        await this.base('File_Stats').update(record.id, updates);
-        console.log('文件統計更新成功:', updates);
-      } else {
-        // 創建新記錄時確保所有必要字段都存在
-        const createFields = {
-          'file_name': normalizedFileName,
-          'download_count': 1,
-          'last_accessed': nowISO,
-          'last_downloaded': action === 'download' ? nowISO : ''  // 使用空字符串而不是 null
+        
+        // 更新字段
+        const updateFields: Record<string, any> = {
+          'download_count': currentDownloads,
+          'last_accessed': nowISO
         };
 
+        // 如果是下載操作，更新 last_downloaded
+        if (action === 'download') {
+          updateFields['last_downloaded'] = nowISO;
+        }
+
+        console.log('準備更新字段:', updateFields);
+        await this.base('File_Stats').update(record.id, updateFields);
+        console.log('文件統計更新成功:', updateFields);
+      } else {
+        // 創建新記錄
+        const createFields: Record<string, any> = {
+          'file_name': normalizedFileName,
+          'download_count': 1,
+          'last_accessed': nowISO
+        };
+
+        // 如果是下載操作，設置 last_downloaded
+        if (action === 'download') {
+          createFields['last_downloaded'] = nowISO;
+        }
+
+        console.log('準備創建新記錄:', createFields);
         const createResult = await this.base('File_Stats').create([{
           fields: createFields
         }]);
