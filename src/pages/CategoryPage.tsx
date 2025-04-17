@@ -359,7 +359,25 @@ const CategoryPage: React.FC = () => {
                     </button>
                     {/* 下載按鈕 */}
                     <button
-                      onClick={() => handleDownload(selectedFile)}
+                      onClick={() => {
+                        const url = selectedFile.files?.[0]?.url || selectedFile.attachment?.[0]?.url || selectedFile.downloadUrl;
+                        if (url) {
+                          const newWindow = window.open('about:blank', '_blank');
+                          if (newWindow) {
+                            newWindow.opener = null;
+                            newWindow.location.href = url;
+                          } else {
+                            // 如果彈窗被阻擋，使用備用方法
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.target = '_blank';
+                            link.rel = 'noopener noreferrer';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                          }
+                        }
+                      }}
                       className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center space-x-2 shadow-md hover:shadow-lg"
                     >
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
