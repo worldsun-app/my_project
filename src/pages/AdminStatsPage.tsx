@@ -37,6 +37,7 @@ interface UserStats {
   userName: string;
   loginCount: number;
   lastLogin: string;
+  email: string;
 }
 
 interface AdminStats {
@@ -122,7 +123,8 @@ const AdminStatsPage: React.FC = () => {
           userId: stat.userId,
           userName: stat.userName,
           loginCount: stat.loginCount,
-          lastLogin: new Date(stat.lastLogin).toLocaleString()
+          lastLogin: new Date(stat.lastLogin).toLocaleString(),
+          email: stat.email
         }));
         setUserStats(userData);
 
@@ -250,7 +252,7 @@ const AdminStatsPage: React.FC = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">用戶名稱</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">用戶 Email</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">登入次數</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">最後登入時間</th>
                 </tr>
@@ -261,7 +263,7 @@ const AdminStatsPage: React.FC = () => {
                   .slice(0, 10)
                   .map((user) => (
                     <tr key={user.userId}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.userName}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.email}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.loginCount}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.lastLogin}</td>
                     </tr>
