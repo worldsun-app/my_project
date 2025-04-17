@@ -14,6 +14,9 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
       }
+    },
+    fs: {
+      strict: true
     }
   },
   base: '/',
@@ -24,13 +27,17 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html')
+      },
+      output: {
+        manualChunks: undefined
       }
     }
   },
   resolve: {
     alias: {
       '@': resolve(__dirname, './src')
-    }
+    },
+    extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom', 'chart.js', 'react-chartjs-2', 'date-fns', 'recharts']

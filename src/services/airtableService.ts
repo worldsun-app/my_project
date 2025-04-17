@@ -9,7 +9,7 @@ export interface DailyStats {
 export interface FileStats {
   fileName: string;
   downloadCount: number;
-  lastDownloaded: string;
+  lastAccessed: string;
 }
 
 export interface UserStats {
@@ -253,23 +253,17 @@ export class AirtableService {
       }
       
       // 使用台北時區進行格式化
-      const formattedDate = new Intl.DateTimeFormat('zh-TW', {
-        timeZone: 'Asia/Taipei',
+      return new Intl.DateTimeFormat('zh-TW', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
-        hour12: false
+        second: '2-digit',
+        hour12: false,
+        timeZone: 'Asia/Taipei'
       }).format(date);
       
-      console.log('日期格式化結果:', {
-        input: dateTimeStr,
-        parsed: date.toISOString(),
-        formatted: formattedDate
-      });
-      
-      return formattedDate;
     } catch (error) {
       console.error('日期格式化錯誤:', {
         input: dateTimeStr,
@@ -395,23 +389,18 @@ export class AirtableService {
         .map(record => {
           // 獲取最後訪問時間
           const lastAccessTime = record.get('last_accessed');
-          const lastDownloadTime = record.get('last_downloaded');
           
           console.log('日期處理:', {
             fileName: record.get('file_name'),
             lastAccessTime,
-            lastDownloadTime,
             lastAccessType: typeof lastAccessTime,
-            lastDownloadType: typeof lastDownloadTime
+            rawDate: lastAccessTime && typeof lastAccessTime === 'string' ? new Date(lastAccessTime) : null
           });
 
-          // 使用最後下載時間，如果沒有則使用最後訪問時間
-          const displayTime = lastDownloadTime || lastAccessTime;
-          
           return {
             fileName: record.get('file_name') as string,
             downloadCount: (record.get('download_count') as number) || 0,
-            lastDownloaded: this.formatDateTime(displayTime as string)
+            lastAccessed: this.formatDateTime(lastAccessTime as string)
           };
         });
 
