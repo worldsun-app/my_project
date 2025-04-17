@@ -369,7 +369,7 @@ const CategoryPage: React.FC = () => {
               <div className="flex-1 relative overflow-hidden">
                 <div className="absolute inset-0">
                   <iframe
-                    src={`${selectedFile.files?.[0]?.url || selectedFile.attachment?.[0]?.url || selectedFile.downloadUrl}#zoom=100&toolbar=0`}
+                    src={`${selectedFile.files?.[0]?.url || selectedFile.attachment?.[0]?.url || selectedFile.downloadUrl}#zoom=45&toolbar=0`}
                     className="w-full h-full border-0"
                     title={selectedFile.name}
                   />

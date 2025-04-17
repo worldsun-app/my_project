@@ -10,7 +10,9 @@ interface FileData {
   name: string;
   sector: string;
   category: string;
-  files?: any[];
+  files?: Array<{ url: string }>;
+  attachment?: Array<{ url: string }>;
+  downloadUrl?: string;
   title?: string;
   date?: string;
 }
@@ -169,9 +171,19 @@ const DashboardPage: React.FC = () => {
     }
   };
 
+  // 在新視窗中打開文件
+  const openInNewWindow = (url: string) => {
+    const features = 'menubar=yes,location=yes,resizable=yes,scrollbars=yes,status=yes';
+    const newWindow = window.open(url, '_blank', features);
+    if (newWindow) {
+      newWindow.focus();
+    }
+  };
+
   // 下載功能
   const handleDownload = async (file: FileData) => {
-    if (file.files && file.files.length > 0 && file.files[0].url) {
+    const downloadUrl = file.files?.[0]?.url || file.attachment?.[0]?.url || file.downloadUrl;
+    if (downloadUrl) {
       try {
         // 記錄下載活動
         await analyticsService.logActivity({
@@ -184,17 +196,13 @@ const DashboardPage: React.FC = () => {
           browserInfo: navigator.userAgent
         });
 
-        const link = document.createElement('a');
-        link.href = file.files[0].url;
-        link.download = file.name;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // 在新視窗中打開文件
+        openInNewWindow(downloadUrl);
       } catch (error) {
         console.error('下載文件時發生錯誤:', error);
       }
     } else {
-      console.error('No attachment URL found for file:', file.name);
+      console.error('No download URL found for file:', file.name);
     }
   };
 
