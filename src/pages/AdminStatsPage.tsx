@@ -86,11 +86,16 @@ const AdminStatsPage: React.FC = () => {
         const stats = await analyticsService.getAdminStats();
         
         // 處理每日統計
-        const dailyData = stats.dailyStats.map(stat => ({
-          date: stat.date,
-          visits: stat.visits,
-          downloads: stat.downloads || 0
-        }));
+        const dailyData = stats.dailyStats
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) // 按日期升序排序
+          .map(stat => ({
+            date: new Date(stat.date).toLocaleDateString('zh-TW', {
+              month: '2-digit',
+              day: '2-digit'
+            }),
+            visits: stat.visits,
+            downloads: stat.downloads || 0
+          }));
         setDailyStats(dailyData);
 
         // 處理文件統計

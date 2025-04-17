@@ -37,6 +37,7 @@ const CategoryPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewStartTime, setViewStartTime] = useState<number>(0);
+  const [zoomLevel, setZoomLevel] = useState<number>(45);
 
   useEffect(() => {
     const fetchFiles = async () => {
@@ -175,6 +176,20 @@ const CategoryPage: React.FC = () => {
       </button>
     </div>
   );
+
+  // 處理縮放
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 10, 100));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev - 10, 20));
+  };
+
+  const handleZoomChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(event.target.value);
+    setZoomLevel(value);
+  };
 
   if (isLoading) {
     return (
@@ -353,13 +368,41 @@ const CategoryPage: React.FC = () => {
               </div>
               {/* 預覽區內容 */}
               <div className="flex-1 relative overflow-hidden">
-                <div className="absolute inset-0">
-                  <iframe
-                    src={`${selectedFile.files?.[0]?.url || selectedFile.attachment?.[0]?.url || selectedFile.downloadUrl}#zoom=45&toolbar=0`}
-                    className="w-full h-full border-0"
-                    title={selectedFile.name}
+                {/* 縮放控制 */}
+                <div className="absolute top-4 right-4 z-10 flex items-center space-x-2 bg-white/80 backdrop-blur-sm px-3 py-2 rounded-lg shadow">
+                  <button
+                    onClick={handleZoomOut}
+                    className="text-gray-600 hover:text-gray-900"
+                    title="縮小"
+                  >
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                    </svg>
+                  </button>
+                  <input
+                    type="range"
+                    min="20"
+                    max="100"
+                    value={zoomLevel}
+                    onChange={handleZoomChange}
+                    className="w-24"
                   />
+                  <button
+                    onClick={handleZoomIn}
+                    className="text-gray-600 hover:text-gray-900"
+                    title="放大"
+                  >
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </button>
+                  <span className="text-sm text-gray-600 min-w-[3ch]">{zoomLevel}%</span>
                 </div>
+                <iframe
+                  src={`${selectedFile.files?.[0]?.url || selectedFile.attachment?.[0]?.url || selectedFile.downloadUrl}#zoom=${zoomLevel}&view=bookmarks&toolbar=0`}
+                  className="w-full h-full border-0"
+                  title={selectedFile.name}
+                />
               </div>
             </>
           ) : (
