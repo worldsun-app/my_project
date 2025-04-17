@@ -438,7 +438,11 @@ export class AirtableService {
       return records
         .filter(record => {
           const email = record.get('email');
-          return email && typeof email === 'string';
+          if (!email || typeof email !== 'string') {
+            console.warn('發現無效的 email 記錄:', record.id);
+            return false;
+          }
+          return true;
         })
         .map(record => {
           const lastLogin = record.get('last_login');
@@ -448,11 +452,8 @@ export class AirtableService {
             type: typeof lastLogin
           });
 
-          const email = record.get('email') as string;
-          const displayName = email.includes('@') ? email.split('@')[0] : email;
-
           return {
-            email: displayName,
+            email: record.get('email') as string,  // 使用完整 email
             lastLogin: this.formatDateTime(lastLogin as string),
             loginCount: record.get('login_count') as number || 0
           };
