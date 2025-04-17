@@ -144,34 +144,15 @@ const CategoryPage: React.FC = () => {
           browserInfo: navigator.userAgent
         });
 
-        // 檢查URL是否為PDF
-        const isPDF = downloadUrl.toLowerCase().includes('.pdf');
-        
-        if (isPDF) {
-          // PDF文件：在新視窗中打開
-          const newWindow = window.open('', '_blank');
-          if (newWindow) {
-            newWindow.location.href = downloadUrl + '#zoom=100';
-          } else {
-            // 如果彈窗被阻擋，則使用備用方法
-            const link = document.createElement('a');
-            link.href = downloadUrl + '#zoom=100';
-            link.target = '_blank';
-            link.rel = 'noopener noreferrer';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-          }
-        } else {
-          // 其他文件：直接下載
-          const link = document.createElement('a');
-          link.href = downloadUrl;
-          link.download = file.name; // 設置下載的文件名
-          link.target = '_blank';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        }
+        // 直接下載文件
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = file.name;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       } catch (error) {
         console.error('下載文件時發生錯誤:', error);
       }
@@ -351,7 +332,27 @@ const CategoryPage: React.FC = () => {
                     <p className="text-sm text-gray-600">{selectedFile.title}</p>
                     <p className="text-sm text-gray-500">上次更新：{selectedFile.date}</p>
                   </div>
-                  <div>
+                  <div className="flex space-x-2">
+                    {/* 在新視窗打開按鈕 */}
+                    <button
+                      onClick={() => {
+                        const url = selectedFile.files?.[0]?.url || selectedFile.attachment?.[0]?.url || selectedFile.downloadUrl;
+                        if (url) {
+                          const newWindow = window.open();
+                          if (newWindow) {
+                            newWindow.opener = null;
+                            newWindow.location.href = url + '#zoom=100';
+                          }
+                        }
+                      }}
+                      className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all duration-200 flex items-center space-x-2 shadow-md hover:shadow-lg"
+                    >
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                      <span>新視窗打開</span>
+                    </button>
+                    {/* 下載按鈕 */}
                     <button
                       onClick={() => handleDownload(selectedFile)}
                       className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center space-x-2 shadow-md hover:shadow-lg"
@@ -366,14 +367,10 @@ const CategoryPage: React.FC = () => {
               </div>
               {/* 預覽區內容 */}
               <div className="flex-1 relative overflow-hidden">
-                <div className="p-4">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">{selectedFile.name}</h3>
-                  <p className="text-sm text-gray-500 mb-4">
-                    最後更新: {selectedFile.date || '無日期資料'}
-                  </p>
+                <div className="absolute inset-0">
                   <iframe
-                    src={selectedFile.files?.[0]?.url || selectedFile.attachment?.[0]?.url || selectedFile.downloadUrl}
-                    className="w-full h-[calc(100vh-200px)] border-0"
+                    src={`${selectedFile.files?.[0]?.url || selectedFile.attachment?.[0]?.url || selectedFile.downloadUrl}#zoom=100&toolbar=0`}
+                    className="w-full h-full border-0"
                     title={selectedFile.name}
                   />
                 </div>
