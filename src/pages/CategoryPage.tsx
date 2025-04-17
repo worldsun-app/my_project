@@ -144,15 +144,22 @@ const CategoryPage: React.FC = () => {
           browserInfo: navigator.userAgent
         });
 
-        // 直接下載文件
+        // 使用 fetch 下載文件
+        const response = await fetch(downloadUrl);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.href = downloadUrl;
+        link.href = url;
         link.download = file.name;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+        console.log('文件下載觸發成功:', {
+          fileName: file.name,
+          downloadUrl: downloadUrl
+        });
       } catch (error) {
         console.error('下載文件時發生錯誤:', error);
       }
