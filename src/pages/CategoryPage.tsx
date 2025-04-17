@@ -144,25 +144,34 @@ const CategoryPage: React.FC = () => {
           browserInfo: navigator.userAgent
         });
 
-        // 在新視窗中打開文件
-        const newWindow = window.open('about:blank', '_blank');
-        if (newWindow) {
-          newWindow.location.href = downloadUrl;
-        } else {
-          // 如果彈窗被阻擋，使用備用方法
-          const link = document.createElement('a');
-          link.href = downloadUrl;
-          link.target = '_blank';
-          link.rel = 'noopener noreferrer';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+        // 創建一個隱藏的 iframe
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+        
+        if (iframe.contentWindow) {
+          // 在 iframe 中打開文件
+          iframe.contentWindow.location.href = downloadUrl;
+          
+          // 移除 iframe
+          setTimeout(() => {
+            document.body.removeChild(iframe);
+          }, 1000);
         }
       } catch (error) {
         console.error('下載文件時發生錯誤:', error);
       }
     } else {
       console.error('No download URL found for file:', file.name);
+    }
+  };
+
+  // 在新視窗中打開文件
+  const openInNewWindow = (url: string) => {
+    const features = 'menubar=yes,location=yes,resizable=yes,scrollbars=yes,status=yes';
+    const newWindow = window.open(url, '_blank', features);
+    if (newWindow) {
+      newWindow.focus();
     }
   };
 
@@ -338,44 +347,12 @@ const CategoryPage: React.FC = () => {
                     <p className="text-sm text-gray-500">上次更新：{selectedFile.date}</p>
                   </div>
                   <div className="flex space-x-2">
-                    {/* 在新視窗打開按鈕 */}
-                    <button
-                      onClick={() => {
-                        const url = selectedFile.files?.[0]?.url || selectedFile.attachment?.[0]?.url || selectedFile.downloadUrl;
-                        if (url) {
-                          const newWindow = window.open();
-                          if (newWindow) {
-                            newWindow.opener = null;
-                            newWindow.location.href = url + '#zoom=100';
-                          }
-                        }
-                      }}
-                      className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all duration-200 flex items-center space-x-2 shadow-md hover:shadow-lg"
-                    >
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                      <span>新視窗打開</span>
-                    </button>
                     {/* 下載按鈕 */}
                     <button
                       onClick={() => {
                         const url = selectedFile.files?.[0]?.url || selectedFile.attachment?.[0]?.url || selectedFile.downloadUrl;
                         if (url) {
-                          const newWindow = window.open('about:blank', '_blank');
-                          if (newWindow) {
-                            newWindow.opener = null;
-                            newWindow.location.href = url;
-                          } else {
-                            // 如果彈窗被阻擋，使用備用方法
-                            const link = document.createElement('a');
-                            link.href = url;
-                            link.target = '_blank';
-                            link.rel = 'noopener noreferrer';
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                          }
+                          openInNewWindow(url);
                         }
                       }}
                       className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center space-x-2 shadow-md hover:shadow-lg"
