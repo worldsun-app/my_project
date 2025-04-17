@@ -99,7 +99,7 @@ export class AirtableService {
       updatePromises.push(this.updateUserStats(data.userEmail));
 
       // 3. 更新文件統計
-      if (data.action === 'download' || data.action === 'file_open') {
+      if (data.action === 'file_download' || data.action === 'file_open') {
         let fileInfo: { fileName?: string } = {};
         
         try {
@@ -110,6 +110,11 @@ export class AirtableService {
         }
 
         if (fileInfo.fileName) {
+          console.log('更新文件統計:', {
+            fileName: fileInfo.fileName,
+            action: data.action,
+            timestamp: data.timestamp
+          });
           updatePromises.push(this.updateFileStats(fileInfo.fileName, data.action));
         }
       }
@@ -586,18 +591,16 @@ export class AirtableService {
         const record = records[0];
         console.log('現有記錄:', record.fields);
         
-        const currentDownloads = ((record.get('download_count') as number) || 0) + 1;
+        const currentDownloads = ((record.get('download_count') as number) || 0);
         
         // 更新字段
         const updateFields: Record<string, any> = {
-          'download_count': currentDownloads,
           'last_accessed': nowISO
         };
 
-        // 如果是下載操作，更新 last_downloaded
-        if (action.toLowerCase() === 'download' || 
-            action.toLowerCase() === 'downloaded' || 
-            action.toLowerCase() === 'file_download') {
+        // 如果是下載操作，更新相關字段
+        if (action === 'file_download') {
+          updateFields['download_count'] = currentDownloads + 1;
           updateFields['last_downloaded'] = nowISO;
           // 同時更新每日統計
           await this.updateDailyStats('download');
@@ -610,14 +613,12 @@ export class AirtableService {
         // 創建新記錄
         const createFields: Record<string, any> = {
           'file_name': normalizedFileName,
-          'download_count': 1,
+          'download_count': action === 'file_download' ? 1 : 0,
           'last_accessed': nowISO
         };
 
         // 如果是下載操作，設置 last_downloaded
-        if (action.toLowerCase() === 'download' || 
-            action.toLowerCase() === 'downloaded' || 
-            action.toLowerCase() === 'file_download') {
+        if (action === 'file_download') {
           createFields['last_downloaded'] = nowISO;
           // 同時更新每日統計
           await this.updateDailyStats('download');
