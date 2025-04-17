@@ -139,9 +139,11 @@ export class AirtableService {
       console.log('開始更新用戶統計:', email);
       const records = await this.base('User_Stats')
         .select({
-          filterByFormula: `{email} = '${email}'`
+          filterByFormula: `LOWER(TRIM({email})) = LOWER(TRIM('${email.replace(/'/g, "\\'")}')`
         })
         .firstPage();
+
+      const now = new Date().toISOString();
 
       if (records.length > 0) {
         const record = records[0];
@@ -149,7 +151,8 @@ export class AirtableService {
         console.log('當前登入次數:', currentCount);
         await this.base('User_Stats').update(record.id, {
           'login_count': currentCount + 1,
-          'last_login': new Date().toISOString()
+          'last_login': now,
+          'email': email  // 確保 email 字段存在
         });
         console.log('用戶統計更新成功');
       } else {
@@ -158,7 +161,7 @@ export class AirtableService {
           fields: {
             'email': email,
             'login_count': 1,
-            'last_login': new Date().toISOString()
+            'last_login': now
           }
         }]);
         console.log('新的用戶統計記錄創建成功');
@@ -544,7 +547,7 @@ export class AirtableService {
         iso: nowISO
       });
 
-      // 定義基本字段
+      // 定義基本字段（使用正確的字段名稱）
       const baseFields = {
         'file_name': normalizedFileName,
         'download_count': 1,
@@ -559,7 +562,7 @@ export class AirtableService {
       // 使用精確匹配查找記錄
       const records = await this.base('File_Stats')
         .select({
-          filterByFormula: `{file_name} = '${normalizedFileName.replace(/'/g, "\\'")}'`
+          filterByFormula: `LOWER(TRIM({file_name})) = LOWER(TRIM('${normalizedFileName.replace(/'/g, "\\'")}')`
         })
         .firstPage();
 
@@ -582,7 +585,17 @@ export class AirtableService {
         await this.base('File_Stats').update(record.id, updates);
         console.log('文件統計更新成功:', updates);
       } else {
-        const createResult = await this.base('File_Stats').create([{ fields }]);
+        // 創建新記錄時確保所有必要字段都存在
+        const createFields = {
+          'file_name': normalizedFileName,
+          'download_count': 1,
+          'last_accessed': nowISO,
+          'last_downloaded': action === 'download' ? nowISO : ''  // 使用空字符串而不是 null
+        };
+
+        const createResult = await this.base('File_Stats').create([{
+          fields: createFields
+        }]);
         console.log('新的文件統計記錄創建成功:', createResult);
       }
     } catch (error: any) {
