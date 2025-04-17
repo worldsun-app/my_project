@@ -354,7 +354,7 @@ export class AirtableService {
   // 獲取必要字段列表
   private getRequiredFields(tableName: string): string[] {
     const fieldMap: Record<string, string[]> = {
-      'Activity_Logs': ['action', 'user_email', 'timestamp', 'file_name'],
+      'Activity_Logs': ['User ID', 'User Email', 'Action', 'Details', 'Timestamp', 'Device Info', 'Browser Info'],
       'User_Stats': ['email', 'login_count', 'last_login'],
       'File_Stats': ['file_name', 'download_count', 'last_accessed', 'last_downloaded'],
       'Daily_Stats': ['date', 'download_count'],
@@ -515,12 +515,50 @@ export class AirtableService {
     }
   }
 
+  // 更新每日統計
+  public async updateDailyStats(action: string): Promise<void> {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      console.log('更新每日統計:', { date: today, action });
+
+      const records = await this.base('Daily_Stats')
+        .select({
+          filterByFormula: `{date} = '${today}'`
+        })
+        .firstPage();
+
+      if (records.length > 0) {
+        const record = records[0];
+        const currentCount = (record.get('download_count') as number) || 0;
+        
+        if (action === 'download') {
+          await this.base('Daily_Stats').update(record.id, {
+            'download_count': currentCount + 1
+          });
+          console.log('每日統計更新成功');
+        }
+      } else {
+        if (action === 'download') {
+          await this.base('Daily_Stats').create([{
+            fields: {
+              'date': today,
+              'download_count': 1
+            }
+          }]);
+          console.log('新的每日統計記錄創建成功');
+        }
+      }
+    } catch (error) {
+      console.error('更新每日統計失敗:', error);
+    }
+  }
+
   // 更新文件統計
   public async updateFileStats(fileName: string, action: string): Promise<void> {
     let normalizedFileName = '';
     
     try {
-      console.log('開始更新文件統計:', fileName, action);
+      console.log('開始更新文件統計:', { fileName, action });
       
       // 解析文件名並清理
       normalizedFileName = fileName;
@@ -567,8 +605,12 @@ export class AirtableService {
         };
 
         // 如果是下載操作，更新 last_downloaded
-        if (action === 'download') {
+        if (action.toLowerCase() === 'download' || 
+            action.toLowerCase() === 'downloaded' || 
+            action.toLowerCase() === 'file_download') {
           updateFields['last_downloaded'] = nowISO;
+          // 同時更新每日統計
+          await this.updateDailyStats('download');
         }
 
         console.log('準備更新字段:', updateFields);
@@ -583,8 +625,12 @@ export class AirtableService {
         };
 
         // 如果是下載操作，設置 last_downloaded
-        if (action === 'download') {
+        if (action.toLowerCase() === 'download' || 
+            action.toLowerCase() === 'downloaded' || 
+            action.toLowerCase() === 'file_download') {
           createFields['last_downloaded'] = nowISO;
+          // 同時更新每日統計
+          await this.updateDailyStats('download');
         }
 
         console.log('準備創建新記錄:', createFields);
@@ -605,12 +651,6 @@ export class AirtableService {
       });
       throw error;
     }
-  }
-
-  // 更新每日統計
-  public async updateDailyStats(): Promise<void> {
-    // 這個方法保留但不執行任何操作
-    console.log('每日統計現在直接從活動記錄計算，不需要更新');
   }
 
   // 更新設備統計
