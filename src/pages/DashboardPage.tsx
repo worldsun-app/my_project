@@ -173,11 +173,7 @@ const DashboardPage: React.FC = () => {
 
   // 在新視窗中打開文件
   const openInNewWindow = (url: string) => {
-    const features = 'menubar=yes,location=yes,resizable=yes,scrollbars=yes,status=yes';
-    const newWindow = window.open(url, '_blank', features);
-    if (newWindow) {
-      newWindow.focus();
-    }
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   // 下載功能
@@ -185,7 +181,8 @@ const DashboardPage: React.FC = () => {
     const downloadUrl = file.files?.[0]?.url || file.attachment?.[0]?.url || file.downloadUrl;
     if (downloadUrl) {
       try {
-        // 記錄下載活動
+        openInNewWindow(downloadUrl);
+
         await analyticsService.logActivity({
           userId: user?.uid || '',
           userEmail: user?.email || '',
@@ -194,10 +191,9 @@ const DashboardPage: React.FC = () => {
           timestamp: new Date().toISOString(),
           deviceInfo: navigator.userAgent,
           browserInfo: navigator.userAgent
+        }).catch(error => {
+          console.error('記錄活動失敗:', error);
         });
-
-        // 在新視窗中打開文件
-        openInNewWindow(downloadUrl);
       } catch (error) {
         console.error('下載文件時發生錯誤:', error);
       }

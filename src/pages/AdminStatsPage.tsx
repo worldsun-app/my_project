@@ -99,8 +99,20 @@ const AdminStatsPage: React.FC = () => {
           fileName: stat.fileName,
           viewCount: stat.viewCount,
           downloadCount: stat.downloadCount || 0,
-          firstViewed: new Date(stat.firstViewed).toLocaleString(),
-          lastViewed: new Date(stat.lastViewed).toLocaleString()
+          firstViewed: stat.firstViewed ? new Date(stat.firstViewed).toLocaleDateString('zh-TW', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          }) : '無記錄',
+          lastViewed: stat.lastViewed ? new Date(stat.lastViewed).toLocaleDateString('zh-TW', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          }) : '無記錄'
         }));
         setFileStats(fileData);
 
@@ -123,7 +135,13 @@ const AdminStatsPage: React.FC = () => {
           userId: stat.userId,
           userName: stat.userName,
           loginCount: stat.loginCount,
-          lastLogin: new Date(stat.lastLogin).toLocaleString(),
+          lastLogin: stat.lastLogin ? new Date(stat.lastLogin).toLocaleDateString('zh-TW', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          }) : '無記錄',
           email: stat.email
         }));
         setUserStats(userData);

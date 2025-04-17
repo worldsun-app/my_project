@@ -1,4 +1,4 @@
-import { airtableService, ActivityData } from './airtableService';
+import { airtableService, ActivityData, DailyStats } from './airtableService';
 import { auth } from '../firebase';
 
 interface AirtableRecord {
@@ -25,6 +25,7 @@ interface AdminStats {
     userName: string;
     loginCount: number;
     lastLogin: string;
+    email: string;
   }[];
   deviceStats: {
     deviceType: string;
@@ -61,16 +62,11 @@ export class AnalyticsService {
   }
 
   // 獲取管理員統計數據
-  async getAdminStats(): Promise<{
-    dailyStats: any[];
-    fileStats: any[];
-    userStats: any[];
-    deviceStats: any[];
-    browserStats: any[];
-  }> {
+  async getAdminStats(): Promise<AdminStats> {
     try {
+      // 並行獲取所有統計數據
       const [
-        dailyStats,
+        dailyStatsRaw,
         fileStats,
         userStats,
         deviceStats,
@@ -83,22 +79,54 @@ export class AnalyticsService {
         airtableService.getBrowserStats()
       ]);
 
+      // 格式化每日統計
+      const dailyStats = dailyStatsRaw.map(stat => ({
+        date: stat.date,
+        visits: 0, // 目前不統計訪問次數
+        downloads: stat.downloads
+      }));
+
+      // 格式化文件統計
+      const fileStatsFormatted = fileStats.map(stat => ({
+        fileId: stat.fileName, // 使用文件名作為 ID
+        fileName: stat.fileName,
+        viewCount: 0, // 目前不統計瀏覽次數
+        downloadCount: stat.downloadCount,
+        firstViewed: '', // 目前不使用此欄位
+        lastViewed: stat.lastAccessed // 使用 lastAccessed 欄位
+      }));
+
+      // 格式化用戶統計
+      const userStatsFormatted = userStats.map(stat => ({
+        userId: stat.email, // 使用 email 作為用戶 ID
+        userName: stat.email.split('@')[0], // 使用 email 前綴作為用戶名
+        loginCount: stat.loginCount,
+        lastLogin: stat.lastLogin,
+        email: stat.email
+      }));
+
+      // 格式化裝置統計
+      const deviceStatsFormatted = deviceStats.map(stat => ({
+        deviceType: stat.deviceType,
+        count: stat.count
+      }));
+
+      // 格式化瀏覽器統計
+      const browserStatsFormatted = browserStats.map(stat => ({
+        browser: stat.browser,
+        count: stat.count
+      }));
+
       return {
         dailyStats,
-        fileStats,
-        userStats,
-        deviceStats,
-        browserStats
+        fileStats: fileStatsFormatted,
+        userStats: userStatsFormatted,
+        deviceStats: deviceStatsFormatted,
+        browserStats: browserStatsFormatted
       };
     } catch (error) {
       console.error('獲取管理員統計數據失敗:', error);
-      return {
-        dailyStats: [],
-        fileStats: [],
-        userStats: [],
-        deviceStats: [],
-        browserStats: []
-      };
+      throw error;
     }
   }
 }

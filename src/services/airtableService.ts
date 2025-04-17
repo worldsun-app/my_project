@@ -206,6 +206,7 @@ export class AirtableService {
       for (let i = 0; i < 30; i++) {
         const date = new Date();
         date.setDate(date.getDate() - i);
+        // 使用 YYYY-MM-DD 格式
         const dateStr = date.toISOString().split('T')[0];
         dailyStats.set(dateStr, { downloads: 0, views: 0 });
       }
@@ -213,14 +214,20 @@ export class AirtableService {
       // 統計活動記錄
       activityRecords.forEach(record => {
         const timestamp = record.get('Timestamp') as string;
-        const date = timestamp.split('T')[0];
-        const action = record.get('Action') as string;
+        if (!timestamp) return;
         
-        const stats = dailyStats.get(date);
-        if (stats) {
-          if (action === 'download' || action === 'file_open') {
-            stats.downloads++;
+        try {
+          const date = new Date(timestamp).toISOString().split('T')[0];
+          const action = record.get('Action') as string;
+          
+          const stats = dailyStats.get(date);
+          if (stats) {
+            if (action === 'download' || action === 'file_download' || action === 'file_open') {
+              stats.downloads++;
+            }
           }
+        } catch (err) {
+          console.error('處理記錄時間戳失敗:', timestamp, err);
         }
       });
 
@@ -229,9 +236,9 @@ export class AirtableService {
         .map(([date, stats]) => ({
           date,
           downloads: stats.downloads,
-          views: 0  // 不再使用 views 統計
+          views: stats.views
         }))
-        .sort((a, b) => a.date.localeCompare(b.date));
+        .sort((a, b) => b.date.localeCompare(a.date)); // 按日期降序排序
     } catch (error) {
       console.error('獲取每日統計失敗:', error);
       return [];
@@ -242,7 +249,7 @@ export class AirtableService {
   private formatDateTime(dateTimeStr: string | undefined | null): string {
     if (!dateTimeStr) {
       console.log('無日期數據:', dateTimeStr);
-      return '無日期資料';
+      return '無記錄';
     }
     
     try {
@@ -264,7 +271,6 @@ export class AirtableService {
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
-        second: '2-digit',
         hour12: false,
         timeZone: 'Asia/Taipei'
       }).format(date);

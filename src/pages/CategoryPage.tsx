@@ -129,10 +129,18 @@ const CategoryPage: React.FC = () => {
     }
   };
 
+  // 在新視窗中打開文件
+  const openInNewWindow = (url: string) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   const handleDownload = async (file: FileData) => {
     const downloadUrl = file.files?.[0]?.url || file.attachment?.[0]?.url || file.downloadUrl;
     if (downloadUrl) {
       try {
+        // 先打開文件，再記錄活動
+        openInNewWindow(downloadUrl);
+
         // 記錄下載活動
         await analyticsService.logActivity({
           userId: user?.uid || '',
@@ -142,36 +150,14 @@ const CategoryPage: React.FC = () => {
           timestamp: new Date().toISOString(),
           deviceInfo: navigator.userAgent,
           browserInfo: navigator.userAgent
+        }).catch(error => {
+          console.error('記錄活動失敗:', error);
         });
-
-        // 創建一個隱藏的 iframe
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
-        
-        if (iframe.contentWindow) {
-          // 在 iframe 中打開文件
-          iframe.contentWindow.location.href = downloadUrl;
-          
-          // 移除 iframe
-          setTimeout(() => {
-            document.body.removeChild(iframe);
-          }, 1000);
-        }
       } catch (error) {
         console.error('下載文件時發生錯誤:', error);
       }
     } else {
       console.error('No download URL found for file:', file.name);
-    }
-  };
-
-  // 在新視窗中打開文件
-  const openInNewWindow = (url: string) => {
-    const features = 'menubar=yes,location=yes,resizable=yes,scrollbars=yes,status=yes';
-    const newWindow = window.open(url, '_blank', features);
-    if (newWindow) {
-      newWindow.focus();
     }
   };
 
