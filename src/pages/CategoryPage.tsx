@@ -149,7 +149,19 @@ const CategoryPage: React.FC = () => {
         
         if (isPDF) {
           // PDF文件：在新視窗中打開
-          window.open(downloadUrl + '#zoom=100', '_blank');
+          const newWindow = window.open('', '_blank');
+          if (newWindow) {
+            newWindow.location.href = downloadUrl + '#zoom=100';
+          } else {
+            // 如果彈窗被阻擋，則使用備用方法
+            const link = document.createElement('a');
+            link.href = downloadUrl + '#zoom=100';
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }
         } else {
           // 其他文件：直接下載
           const link = document.createElement('a');
