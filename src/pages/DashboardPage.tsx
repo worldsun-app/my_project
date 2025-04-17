@@ -198,63 +198,18 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  // 在新分頁開啟
-  const handleOpenInNewTab = (file: FileData) => {
-    if (file.files && file.files.length > 0 && file.files[0].url) {
-      window.open(file.files[0].url, '_blank');
-    }
-  };
-
-  const handleFileClick = async (file: FileData) => {
-    try {
-      // 先打開文件
-      if (file.files?.[0]?.url) {
-        window.open(file.files[0].url, '_blank');
-      }
-
-      // 嘗試記錄活動
-      await analyticsService.logActivity({
-        userId: user?.uid || '',
-        userEmail: user?.email || '',
-        action: 'file_open',
-        details: JSON.stringify({
-          fileId: file.id,
-          fileName: file.name,
-          category: file.category
-        }),
-        timestamp: new Date().toISOString(),
-        deviceInfo: navigator.userAgent,
-        browserInfo: navigator.userAgent
-      }).catch(error => {
-        console.warn('記錄活動失敗，但不影響文件打開:', error);
-      });
-    } catch (error) {
-      console.error('打開文件時發生錯誤:', error);
-    }
-  };
-
-  // 修改搜索結果表格中的下載按鈕部分
+  // 修改按鈕部分
   const DownloadButtons = ({ file }: { file: FileData }) => (
     <div className="flex items-center space-x-2">
       <button
         onClick={() => handleDownload(file)}
         className="text-blue-600 hover:text-blue-900 font-medium flex items-center"
-        title="直接下載"
+        title="下載文件"
       >
         <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
         </svg>
-        下載
-      </button>
-      <button
-        onClick={() => handleOpenInNewTab(file)}
-        className="text-gray-600 hover:text-gray-900 font-medium flex items-center"
-        title="在新分頁開啟"
-      >
-        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-        </svg>
-        開啟
+        下載文件
       </button>
     </div>
   );
@@ -302,9 +257,9 @@ const DashboardPage: React.FC = () => {
   }
 
   return (
-    <div className="h-screen flex">
+    <div className="h-screen flex overflow-hidden">
       {/* 左側導航欄 */}
-      <div className="w-64 bg-slate-800 flex-shrink-0">
+      <div className="w-64 bg-slate-800 flex-shrink-0 h-full overflow-y-auto">
         <div className="p-4">
           {/* 平台標題 */}
           <div className="mb-6">
@@ -383,7 +338,7 @@ const DashboardPage: React.FC = () => {
       {/* 主要內容區域 */}
       <div className="flex-1 flex min-w-0">
         {/* 中間文件列表 */}
-        <div className="w-1/4 flex-shrink-0 bg-white border-r border-gray-200">
+        <div className="w-1/4 flex-shrink-0 bg-white border-r border-gray-200 overflow-y-auto">
           <div className="p-4">
             {/* 搜索框 */}
             <div className="mb-4">
@@ -471,7 +426,7 @@ const DashboardPage: React.FC = () => {
         </div>
 
         {/* 右側預覽區 */}
-        <div className="w-3/4 flex flex-col min-w-0 bg-white">
+        <div className="w-3/4 flex flex-col min-w-0 bg-white overflow-hidden">
           {selectedFile ? (
             <>
               {/* 預覽區頂部 */}
@@ -484,13 +439,13 @@ const DashboardPage: React.FC = () => {
                   </div>
                   <div>
                     <button
-                      onClick={() => handleFileClick(selectedFile)}
+                      onClick={() => handleDownload(selectedFile)}
                       className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center space-x-2 shadow-md hover:shadow-lg"
                     >
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                       </svg>
-                      <span>開啟文件</span>
+                      <span>下載文件</span>
                     </button>
                   </div>
                 </div>

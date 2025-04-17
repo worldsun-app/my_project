@@ -144,7 +144,7 @@ export class AirtableService {
       console.log('開始更新用戶統計:', email);
       const records = await this.base('User_Stats')
         .select({
-          filterByFormula: `LOWER(TRIM({email})) = LOWER(TRIM('${email.replace(/'/g, "\\'")}')`
+          filterByFormula: `{email} = '${email.replace(/'/g, "\\'")}'`
         })
         .firstPage();
 
@@ -157,7 +157,7 @@ export class AirtableService {
         await this.base('User_Stats').update(record.id, {
           'login_count': currentCount + 1,
           'last_login': now,
-          'email': email  // 確保 email 字段存在
+          'email': email
         });
         console.log('用戶統計更新成功');
       } else {
@@ -583,7 +583,7 @@ export class AirtableService {
       // 使用精確匹配查找記錄
       const records = await this.base('File_Stats')
         .select({
-          filterByFormula: `LOWER(TRIM({file_name})) = LOWER(TRIM('${normalizedFileName.replace(/'/g, "\\'")}')`
+          filterByFormula: `{file_name} = '${normalizedFileName.replace(/'/g, "\\'")}'`
         })
         .firstPage();
 
@@ -635,9 +635,9 @@ export class AirtableService {
         originalFileName: fileName,
         processedFileName: normalizedFileName,
         action: action,
-        errorType: error.type,
-        statusCode: error.statusCode,
-        message: error.message,
+        errorType: error?.type,
+        statusCode: error?.statusCode,
+        message: error?.message,
         fullError: error
       });
       throw error;

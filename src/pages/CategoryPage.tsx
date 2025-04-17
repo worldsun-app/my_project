@@ -1,12 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { File, getFilesGroupedBySector, getCategories, getSubcategories } from '../services/airtable';
+import { File, getFilesGroupedBySector } from '../services/airtable';
 import { useAuth } from '../contexts/AuthContext';
 import { analyticsService } from '../services/analyticsService';
 
+// 扩展 File 类型以包含可选的 files 字段
+interface FileData {
+  id: string;
+  name: string;
+  sector: string;
+  category: string;
+  files?: Array<{ url: string }>;
+  attachment?: Array<{ url: string }>;
+  downloadUrl?: string;
+  title?: string;
+  date?: string;
+}
+
 type Category = {
   name: string;
-  files: File[];
+  files: FileData[];
 };
 
 type CategoryGroup = {
@@ -19,8 +32,8 @@ const CategoryPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [categoryGroups, setCategoryGroups] = useState<CategoryGroup[]>([]);
-  const [filteredFiles, setFilteredFiles] = useState<File[]>([]);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [filteredFiles, setFilteredFiles] = useState<FileData[]>([]);
+  const [selectedFile, setSelectedFile] = useState<FileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewStartTime, setViewStartTime] = useState<number>(0);
@@ -37,7 +50,16 @@ const CategoryPage: React.FC = () => {
           Object.entries(sectorData.categories).forEach(([catName, files]) => {
             categoryList.push({
               name: catName,
-              files: files
+              files: files.map(file => ({
+                id: file.name,
+                name: file.name,
+                sector: file.sector,
+                category: file.category,
+                title: file.title,
+                date: file.date,
+                files: file.downloadUrl ? [{ url: file.downloadUrl }] : undefined,
+                downloadUrl: file.downloadUrl
+              }))
             });
           });
           groups.push({
@@ -71,16 +93,25 @@ const CategoryPage: React.FC = () => {
 
     setViewStartTime(Date.now());
     analyticsService.logActivity({
-      actionType: 'category_view',
-      category: categoryName
+      action: 'category_view',
+      details: categoryName || '',
+      userId: user?.uid || '',
+      userEmail: user?.email || '',
+      timestamp: new Date().toISOString(),
+      deviceInfo: navigator.userAgent,
+      browserInfo: navigator.userAgent
     });
 
     return () => {
       const duration = Math.floor((Date.now() - viewStartTime) / 1000);
       analyticsService.logActivity({
-        actionType: 'page_leave',
-        category: categoryName,
-        duration
+        action: 'page_leave',
+        details: `${categoryName || ''} (duration: ${duration}s)`,
+        userId: user?.uid || '',
+        userEmail: user?.email || '',
+        timestamp: new Date().toISOString(),
+        deviceInfo: navigator.userAgent,
+        browserInfo: navigator.userAgent
       });
     };
   }, [categoryName, user]);
@@ -98,17 +129,49 @@ const CategoryPage: React.FC = () => {
     }
   };
 
-  const handleFileOpen = async (file: File) => {
-    if (!user) return;
+  const handleDownload = async (file: FileData) => {
+    const downloadUrl = file.files?.[0]?.url || file.attachment?.[0]?.url || file.downloadUrl;
+    if (downloadUrl) {
+      try {
+        // 記錄下載活動
+        await analyticsService.logActivity({
+          userId: user?.uid || '',
+          userEmail: user?.email || '',
+          action: 'file_download',
+          details: file.name,
+          timestamp: new Date().toISOString(),
+          deviceInfo: navigator.userAgent,
+          browserInfo: navigator.userAgent
+        });
 
-    await analyticsService.logActivity({
-      actionType: 'file_open',
-      fileId: file.id,
-      fileName: file.name,
-      category: categoryName
-    });
-    window.open(file.downloadUrl, '_blank');
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = file.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (error) {
+        console.error('下載文件時發生錯誤:', error);
+      }
+    } else {
+      console.error('No download URL found for file:', file.name);
+    }
   };
+
+  const DownloadButtons = ({ file }: { file: FileData }) => (
+    <div className="flex items-center space-x-2">
+      <button
+        onClick={() => handleDownload(file)}
+        className="text-blue-600 hover:text-blue-900 font-medium flex items-center"
+        title="下載文件"
+      >
+        <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        下載文件
+      </button>
+    </div>
+  );
 
   if (isLoading) {
     return (
@@ -268,13 +331,13 @@ const CategoryPage: React.FC = () => {
                   </div>
                   <div>
                     <button
-                      onClick={() => handleFileOpen(selectedFile)}
+                      onClick={() => handleDownload(selectedFile)}
                       className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center space-x-2 shadow-md hover:shadow-lg"
                     >
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                       </svg>
-                      <span>開啟文件</span>
+                      <span>下載文件</span>
                     </button>
                   </div>
                 </div>
@@ -282,14 +345,14 @@ const CategoryPage: React.FC = () => {
               {/* 預覽區內容 */}
               <div className="flex-1 relative overflow-hidden">
                 <div className="p-4">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">{selectedFile.fields['文件名稱']}</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">{selectedFile.name}</h3>
                   <p className="text-sm text-gray-500 mb-4">
                     最後更新: {selectedFile.date || '無日期資料'}
                   </p>
                   <iframe
-                    src={selectedFile.fields['文件連結']}
+                    src={selectedFile.files?.[0]?.url || selectedFile.attachment?.[0]?.url || selectedFile.downloadUrl}
                     className="w-full h-[calc(100vh-200px)] border-0"
-                    title={selectedFile.fields['文件名稱']}
+                    title={selectedFile.name}
                   />
                 </div>
               </div>
