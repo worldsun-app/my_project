@@ -6,10 +6,9 @@ const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, user, loading } = useAuth();
+  const { login, user, loading, isAuthenticating } = useAuth();
 
   // 如果用戶已經登入，重定向到首頁或上一個頁面
   useEffect(() => {
@@ -22,10 +21,9 @@ const LoginPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLoading) return;
+    if (isAuthenticating) return;
 
     setError('');
-    setIsLoading(true);
     console.log('開始登入流程:', email);
 
     try {
@@ -44,8 +42,6 @@ const LoginPage: React.FC = () => {
       }
       
       setError(errorMessage);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -83,7 +79,7 @@ const LoginPage: React.FC = () => {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
-              disabled={isLoading}
+              disabled={isAuthenticating}
             />
           </div>
 
@@ -98,16 +94,16 @@ const LoginPage: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
-              disabled={isLoading}
+              disabled={isAuthenticating}
             />
           </div>
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isAuthenticating}
             className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 disabled:bg-blue-300 transition-colors"
           >
-            {isLoading ? (
+            {isAuthenticating ? (
               <div className="flex items-center justify-center">
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                 登入中...
