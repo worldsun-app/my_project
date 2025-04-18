@@ -9,18 +9,21 @@ const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, user } = useAuth();
+  const { login, user, loading } = useAuth();
 
   // 如果用戶已經登入，重定向到首頁或上一個頁面
   useEffect(() => {
-    if (user) {
+    if (!loading && user) {
+      console.log('用戶已登入，準備導航');
       const from = (location.state as any)?.from?.pathname || '/';
       navigate(from, { replace: true });
     }
-  }, [user, navigate, location]);
+  }, [user, loading, navigate, location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
+
     setError('');
     setIsLoading(true);
     console.log('開始登入流程:', email);
@@ -32,7 +35,6 @@ const LoginPage: React.FC = () => {
       console.error('登入失敗:', err);
       let errorMessage = '登入失敗，請檢查您的帳號密碼';
       
-      // 根據 Firebase 錯誤代碼設置具體錯誤信息
       if (err.code === 'auth/invalid-credential') {
         errorMessage = '帳號或密碼錯誤';
       } else if (err.code === 'auth/too-many-requests') {
@@ -47,6 +49,17 @@ const LoginPage: React.FC = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>載入中...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white p-8 rounded-lg shadow-md w-96">
@@ -58,8 +71,8 @@ const LoginPage: React.FC = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
             <label htmlFor="email" className="block text-gray-700 mb-2">
               電子郵件
             </label>
@@ -70,10 +83,11 @@ const LoginPage: React.FC = () => {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
+              disabled={isLoading}
             />
           </div>
 
-          <div className="mb-6">
+          <div>
             <label htmlFor="password" className="block text-gray-700 mb-2">
               密碼
             </label>
@@ -84,6 +98,7 @@ const LoginPage: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
+              disabled={isLoading}
             />
           </div>
 

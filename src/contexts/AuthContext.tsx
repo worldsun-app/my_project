@@ -6,18 +6,21 @@ interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('設置 Firebase 認證監聽器');
-    const unsubscribe = onAuthStateChanged(firebaseAuth, (user) => {
-      console.log('認證狀態變更:', user?.email);
-      setUser(user);
+    console.log('初始化 Firebase 認證監聽器');
+    const unsubscribe = onAuthStateChanged(firebaseAuth, (currentUser) => {
+      console.log('認證狀態變更:', currentUser?.email);
+      setUser(currentUser);
+      setLoading(false);
     });
 
     return () => {
@@ -29,29 +32,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     console.log('嘗試登入:', email);
     try {
+      setLoading(true);
       const userCredential = await signInWithEmailAndPassword(firebaseAuth, email, password);
       console.log('登入成功:', userCredential.user.email);
+      setUser(userCredential.user);
     } catch (error: any) {
       console.error('登入失敗:', error.code, error.message);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const logout = async () => {
     console.log('嘗試登出');
     try {
+      setLoading(true);
       await signOut(firebaseAuth);
       console.log('登出成功');
+      setUser(null);
+      // 清除本地存儲的認證信息
+      localStorage.removeItem('firebase:authUser:' + firebaseAuth.config.apiKey + ':[DEFAULT]');
+      sessionStorage.removeItem('firebase:authUser:' + firebaseAuth.config.apiKey + ':[DEFAULT]');
     } catch (error) {
       console.error('登出失敗:', error);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const value = {
     user,
     login,
-    logout
+    logout,
+    loading
   };
 
   return (
