@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const LoginPage: React.FC = () => {
@@ -8,7 +8,16 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const location = useLocation();
+  const { login, user } = useAuth();
+
+  // 如果用戶已經登入，重定向到首頁或上一個頁面
+  useEffect(() => {
+    if (user) {
+      const from = (location.state as any)?.from?.pathname || '/';
+      navigate(from, { replace: true });
+    }
+  }, [user, navigate, location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,8 +27,7 @@ const LoginPage: React.FC = () => {
 
     try {
       await login(email, password);
-      console.log('登入成功，準備導航');
-      navigate('/');
+      // 導航會在 useEffect 中處理
     } catch (err: any) {
       console.error('登入失敗:', err);
       let errorMessage = '登入失敗，請檢查您的帳號密碼';

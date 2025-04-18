@@ -1,47 +1,50 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { auth, isAdmin } from './firebase';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import CategoryPage from './pages/CategoryPage';
 import AdminStatsPage from './pages/AdminStatsPage';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 // 受保護的路由組件
 const ProtectedRoute: React.FC<{ element: React.ReactElement; requireAdmin?: boolean }> = ({ 
   element, 
   requireAdmin = false 
 }) => {
+  const { user } = useAuth();
+  const location = useLocation();
   const [loading, setLoading] = useState(true);
-  const [authorized, setAuthorized] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
-      console.log('ProtectedRoute - 用戶狀態變更:', currentUser?.email);
-      setUser(currentUser);
-      
-      if (!currentUser) {
-        console.log('ProtectedRoute - 用戶未登錄');
-        setAuthorized(false);
-      } else if (requireAdmin) {
-        console.log('ProtectedRoute - 檢查管理員權限');
-        const adminStatus = await isAdmin(currentUser);
-        console.log('ProtectedRoute - 管理員權限檢查結果:', adminStatus);
-        setAuthorized(adminStatus);
-      } else {
-        console.log('ProtectedRoute - 普通用戶授權');
-        setAuthorized(true);
-      }
-      setLoading(false);
-    });
+    const checkAuth = async () => {
+      try {
+        if (!user) {
+          setIsAuthorized(false);
+          setLoading(false);
+          return;
+        }
 
-    return () => unsubscribe();
-  }, [requireAdmin]);
+        if (requireAdmin) {
+          const adminStatus = await isAdmin(user);
+          setIsAuthorized(adminStatus);
+        } else {
+          setIsAuthorized(true);
+        }
+      } catch (error) {
+        console.error('驗證權限時出錯:', error);
+        setIsAuthorized(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [user, requireAdmin]);
 
   if (loading) {
-    console.log('ProtectedRoute - 載入中...');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -52,36 +55,14 @@ const ProtectedRoute: React.FC<{ element: React.ReactElement; requireAdmin?: boo
     );
   }
 
-  if (!authorized) {
-    console.log('ProtectedRoute - 未授權，重定向到:', user ? '首頁' : '登錄頁');
-    return <Navigate to={user ? '/' : '/login'} replace />;
+  if (!isAuthorized) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  console.log('ProtectedRoute - 已授權，渲染組件');
   return element;
 };
 
-function App() {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setIsLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>載入中...</p>
-      </div>
-    );
-  }
-
+const App: React.FC = () => {
   return (
     <Router>
       <AuthProvider>
